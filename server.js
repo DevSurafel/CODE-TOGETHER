@@ -12,7 +12,7 @@ const server = http.createServer(app);
 // Enable CORS for development
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000", // React app address
+    origin: "https://code-together.up.railway.app", // React app address
     methods: ["GET", "POST"],
   },
 });
