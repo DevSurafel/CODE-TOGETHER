@@ -1,12 +1,7 @@
 [build]
-  base = "frontend"
-  publish = "frontend/build"
-  command = "npm run build"
+base = "."               # Root folder where your frontend code is
+publish = "build"        # This is the folder generated after `npm run build`
+command = "npm run build" # Default React build command
 
 [functions]
-  directory = "netlify/functions"
-
-[[redirects]]
-  from = "/socket.io/*"
-  to = "/.netlify/functions/server"
-  status = 200
+directory = "netlify/functions"  # Folder for backend (serverless functions)
