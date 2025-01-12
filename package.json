@@ -31,10 +31,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "frontend": "react-scripts start",
-    "start": "npm run build && npm run server:prod",
-    "build": "react-scripts build",
-    "server:prod": "node server.js",
+    "frontend": "react-scripts start",  // For local development
+    "start": "npm run build && npm run server:prod",  // Start both frontend and backend
+    "build": "react-scripts build",  // Standard React build for production
+    "server:prod": "node server.js",  // For production server
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
