@@ -22,7 +22,7 @@
     "react-codemirror": "^1.0.0",
     "@uiw/react-codemirror": "^4.0.0",
     "@codemirror/lang-javascript": "^6.0.0",
-    "@uiw/codemirror-theme-material": "^1.0.0",
+    "@uiw/codemirror-theme-material": "^1.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.0",
     "react-icons": "^4.8.0",
@@ -37,6 +37,7 @@
     "frontend": "react-scripts start",
     "start": "npm run build && npm run server:prod",
     "build": "npm install --legacy-peer-deps && react-scripts build",
+    "heroku-postbuild": "npm install --legacy-peer-deps && npm run build",
     "server:prod": "node server.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
