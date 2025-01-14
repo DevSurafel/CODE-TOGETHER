@@ -1,27 +1,85 @@
-import React from 'react';
-import { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import sun from '../images/sun.png';
 import moon from '../images/moon.png';
+import videoFile from '../videos/switchVideo.mp4';
 import prop1 from '../images/prop1.png';
 import prop2 from '../images/prop2.png';
 import prop3 from '../images/prop3.png';
 import prop4 from '../images/prop4.png';
 import prop5 from '../images/prop5.png';
-//import code from '../images/code.png';
 import bglogo from '../images/bglogo.png';
 
 const Home1 = () => {
     const [darkMode, setDarkMode] = useState(true);
+    const [showVideo, setShowVideo] = useState(false);
     const [id, setId] = useState('');
     const [username, setUsername] = useState('');
     const navigate = useNavigate();
 
+    useEffect(() => {
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            document.body.style.backgroundColor = 'black';
+            document.body.style.color = 'black';
+            document.body.style.transition = 'all 0.2s ease-in-out';
+
+            const inputs = document.querySelectorAll('input, button');
+            inputs.forEach((input) => {
+                input.style.backgroundColor = 'black';
+                input.style.color = 'black';
+                input.style.border = 'black';
+                input.style.caretColor = 'black';
+                if (input.classList.contains('inputBox')) {
+                    input.classList.remove('light-mode');
+                    input.classList.add('dark-mode');
+                }
+            });
+        } else {
+            document.body.classList.remove('dark-mode');
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach((input) => {
+                if (input.classList.contains('inputBox')) {
+                    input.classList.remove('dark-mode');
+                    input.classList.add('light-mode');
+                }
+            });
+        }
+    }, [darkMode]);
+
     const toggleDarkMode = () => {
-        setDarkMode(!darkMode);
-        document.body.style.backgroundColor = darkMode ? 'white' : '#282727';
+        if (darkMode) {
+            setShowVideo(true);
+            setTimeout(() => {
+                setDarkMode(false);
+                setShowVideo(false);
+                document.body.style.backgroundColor = '';
+                document.body.style.color = '';
+
+                const inputs = document.querySelectorAll('input, button');
+                inputs.forEach((input) => {
+                    input.style.backgroundColor = '';
+                    input.style.color = '';
+                    input.style.border = '';
+                    input.style.caretColor = '';
+                });
+            }, 5000);
+        } else {
+            setDarkMode(true);
+            document.body.style.backgroundColor = 'black';
+            document.body.style.color = 'black';
+
+            const inputs = document.querySelectorAll('input, button');
+            inputs.forEach((input) => {
+                input.style.backgroundColor = 'black';
+                input.style.color = 'black';
+                input.style.border = 'black';
+                input.style.caretColor = 'black';
+            });
+        }
     };
 
     const createNewRoom = (e) => {
@@ -67,8 +125,7 @@ const Home1 = () => {
                 className="form_wrapper"
                 style={{
                     marginTop: '186px',
-
-                    backgroundColor: darkMode ? 'black' : '#E8E7E7',
+                    backgroundColor: darkMode ? 'black' : 'black',
                 }}
             >
                 <h4
@@ -76,8 +133,7 @@ const Home1 = () => {
                     style={{
                         marginTop: '40px',
                         marginBottom: '40px',
-
-                        color: darkMode ? '#E8E7E7' : '#1C1C1C',
+                        color: darkMode ? 'black' : 'white',
                     }}
                 >
                     Paste Invitation Room ID
@@ -86,37 +142,41 @@ const Home1 = () => {
                     <input
                         type="text"
                         placeholder="Room ID"
-                        className="inputBox"
+                        className={`inputBox ${darkMode ? 'dark-mode' : 'light-mode'}`}
                         value={id}
                         onChange={(e) => setId(e.target.value)}
                         onKeyUp={handleInputEnter}
+                        style={{
+                            caretColor: darkMode ? 'black' : 'white',
+                            color: 'black',
+                        }}
                     />
                     <input
                         type="text"
                         placeholder="Username"
-                        className="inputBox"
+                        className={`inputBox ${darkMode ? 'dark-mode' : 'light-mode'}`}
                         onChange={(e) => setUsername(e.target.value)}
                         onKeyUp={handleInputEnter}
+                        style={{
+                            caretColor: darkMode ? 'black' : 'white',
+                            color: 'black',
+                        }}
                     />
                     <div>
                         <span
                             className="createInfo"
                             style={{
-                                color: darkMode ? '#E8E7E7' : '#1C1C1C',
+                                color: darkMode ? 'black' : 'white',
                             }}
                         >
-                            If you don't have an invite, create &nbsp;
+                           <b>If you don't have an invite, create &nbsp; </b> 
                             <button
                                 className="createNewBtn"
                                 onClick={createNewRoom}
-                            >
-                                new Room
+                            ><b>new Room</b>
                             </button>
                         </span>
-                        <button
-                            className="btn joinBtn"
-                            onClick={joinRoom}
-                        >
+                        <button className="btn joinBtn" onClick={joinRoom}>
                             Join
                         </button>
                     </div>
@@ -124,30 +184,52 @@ const Home1 = () => {
             </div>
             {darkMode ? (
                 <img
-                    src={sun}
-                    alt="Sun"
-                    style={{
-                        width: '50px',
-                        position: 'absolute',
-                        top: '5rem',
-                        cursor: 'pointer',
-                    }}
-                    className="darkModeBtn"
-                    onClick={toggleDarkMode}
-                />
-            ) : (
-                <img
                     src={moon}
                     alt="Moon"
                     className="darkModeBtn"
                     style={{
                         width: '50px',
                         position: 'absolute',
-                        top: '5rem',
+                        top: '41rem',
                         cursor: 'pointer',
+                        right: '31%',
                     }}
                     onClick={toggleDarkMode}
                 />
+            ) : (
+                <img
+                    src={sun}
+                    alt="Sun"
+                    style={{
+                        width: '50px',
+                        position: 'absolute',
+                        top: '41rem',
+                        cursor: 'pointer',
+                        right: '31%',
+                    }}
+                    className="darkModeBtn"
+                    onClick={toggleDarkMode}
+                />
+            )}
+            {showVideo && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '58%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: 1000,
+                    }}
+                >
+                    <video
+                        src={videoFile}
+                        autoPlay
+                        style={{
+                            width: '100%',
+                            maxWidth: '600px',
+                        }}
+                    ></video>
+                </div>
             )}
             <img src={prop2} alt="" className="prop-image prop1" />
             <img src={prop3} alt="" className="prop-image prop2" />
