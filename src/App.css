@@ -394,8 +394,8 @@ margin-right: 7px;
 }
 
 .prop2 {
-  top: 40%;
-  left: 10%;
+  top: 65%;
+  left: 17%;
   width: 120px;
 }
 
@@ -541,4 +541,12 @@ margin-right: 7px;
   color: white;
   cursor: pointer;
   font-size: 20px;
+}
+
+.inputBox.dark-mode::placeholder {
+  color: black;
+}
+
+.inputBox.light-mode::placeholder {
+  color: white;
 }
