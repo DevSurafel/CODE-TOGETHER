@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy package.json for dependency installation
 COPY package.json ./
+COPY package-lock.json ./
 
 # Install dependencies (no npm version override)
 RUN npm install --legacy-peer-deps --no-audit --no-fund
@@ -31,5 +32,5 @@ COPY --from=builder /app/build ./build
 # Expose the port (optional, for documentation; Render overrides this)
 EXPOSE 10000
 
-# Start the app using the $PORT environment variable
-CMD ["serve", "-s", "build", "-l", "$PORT"]
+# Use PORT environment variable with a fallback to 10000
+CMD ["sh", "-c", "serve -s build -l ${PORT:-10000}"]
