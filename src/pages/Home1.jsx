@@ -190,7 +190,7 @@ const Home1 = () => {
                     style={{
                         width: '50px',
                         position: 'absolute',
-                        top: '41rem',
+                        top: '60rem',
                         cursor: 'pointer',
                         right: '31%',
                     }}
@@ -203,7 +203,7 @@ const Home1 = () => {
                     style={{
                         width: '50px',
                         position: 'absolute',
-                        top: '41rem',
+                        top: '60rem',
                         cursor: 'pointer',
                         right: '31%',
                     }}
