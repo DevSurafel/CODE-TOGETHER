@@ -21,7 +21,7 @@
     "@uiw/react-codemirror": "4.21.22",
     "axios": "1.6.2",
     "react": "18.2.0",
-    "react-avatar": "5.0.0",  // Updated from 5.2.0 to 5.0.0
+    "react-avatar": "5.0.0", 
     "react-dom": "18.2.0",
     "react-hot-toast": "2.4.1",
     "react-icons": "4.11.0",
