@@ -7,9 +7,9 @@ WORKDIR /app
 # Copy only package.json first
 COPY package.json ./
 
-# Install specific npm version and dependencies
-RUN npm install -g npm@9.8.1 && \
-    npm install --legacy-peer-deps --no-audit
+# Install dependencies with exact versions
+RUN npm install -g npm@8.19.4 && \
+    npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy all other files
 COPY . .
