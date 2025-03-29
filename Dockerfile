@@ -1,17 +1,16 @@
 # Stage 1: Build
-FROM node:18 AS builder
+FROM node:18-alpine AS builder
 
-# Update npm first
-RUN npm install -g npm@9.8.1
-
+# Install dependencies first for better caching
 WORKDIR /app
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm install -g npm@8.19.4 && \
+    npm install --legacy-peer-deps --no-audit
 COPY . .
 RUN npm run build
 
 # Stage 2: Serve
-FROM node:18
+FROM node:18-alpine
 WORKDIR /app
 RUN npm install -g serve@14.2.1
 COPY --from=builder /app/build ./build
