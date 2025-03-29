@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@codemirror/autocomplete": "6.7.1",
-    "@codemirror/closebrackets": "6.3.0",
+    "@codemirror/closebrackets": "6.7.1",
     "@codemirror/commands": "6.3.0",
     "@codemirror/lang-javascript": "6.1.9",
     "@codemirror/language": "6.6.1",
@@ -38,7 +38,11 @@
     "build": "react-scripts build",
     "serve": "serve -s build -l $PORT",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "preinstall": "npx npm-force-resolutions"
+  },
+  "resolutions": {
+    "@codemirror/closebrackets": "6.7.1"
   },
   "eslintConfig": {
     "extends": [
@@ -57,5 +61,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "npm-force-resolutions": "0.0.10"
   }
 }
