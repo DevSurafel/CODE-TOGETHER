@@ -6,7 +6,6 @@ WORKDIR /app
 
 # Copy package.json for dependency installation
 COPY package.json ./
-COPY package-lock.json ./
 
 # Install dependencies (no npm version override)
 RUN npm install --legacy-peer-deps --no-audit --no-fund
