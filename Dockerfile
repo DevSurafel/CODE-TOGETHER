@@ -1,11 +1,20 @@
 # Stage 1: Build
 FROM node:18-alpine AS builder
 
+# Install dependencies first for better caching
 WORKDIR /app
-COPY package.json package-lock.json ./
+
+# Copy only package.json first
+COPY package.json ./
+
+# Install specific npm version and dependencies
 RUN npm install -g npm@9.8.1 && \
-    npm ci --legacy-peer-deps --no-audit
+    npm install --legacy-peer-deps --no-audit
+
+# Copy all other files
 COPY . .
+
+# Build the app
 RUN npm run build
 
 # Stage 2: Serve
