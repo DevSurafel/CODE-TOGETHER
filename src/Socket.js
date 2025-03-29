@@ -3,13 +3,15 @@ import { io } from "socket.io-client";
 export const initSocket = async () => {
   const options = {
     "force new connection": true,
-    reconnectionAttempts: "Infinity",
+    reconnectionAttempts: Infinity,  // Fixed: Use `Infinity` (no quotes)
     timeout: 10000,
     transports: ["websocket"],
   };
 
   try {
-    const socket = io(`${process.env.REACT_APP_BACKEND_URL}/.netlify/functions/server`, options);
+    // Use environment variable for backend URL (configured in Render)
+    const backendUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const socket = io(backendUrl, options);  // Removed Netlify-specific path
 
     return await new Promise((resolve, reject) => {
       socket.on("connect", () => {
