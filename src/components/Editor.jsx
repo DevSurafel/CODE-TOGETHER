@@ -3,64 +3,36 @@ import { javascript } from '@codemirror/lang-javascript';
 import { material } from '@uiw/codemirror-theme-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { closeBrackets } from '@codemirror/autocomplete';
-import { closeBracketsKeymap } from '@codemirror/closebrackets';
 import { ACTIONS } from '../Action';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 function Editor({ socketRef, id, setLiveCode, editorRef }) {
   const location = useLocation();
-  
+
+  // Handle code changes and emit to socket
+  const handleCodeChange = (value) => {
+    setLiveCode(value);
+    if (socketRef.current) {
+      socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+        id,
+        code: value,
+      });
+    }
+  };
+
+  // Sync code and access changes via socket
   useEffect(() => {
-    if (!editorRef.current) return;
-
-    const extensions = [
-      javascript({ jsx: true }),
-      closeBrackets(),
-      material
-    ];
-
-    editorRef.current = CodeMirror({
-      value: '',
-      extensions,
-      theme: material,
-      basicSetup: {
-        lineNumbers: true,
-        foldGutter: true,
-        highlightActiveLine: true,
-        bracketMatching: true,
-        closeBrackets: true,
-        autocompletion: true,
-      },
-      onChange: (value) => {
-        setLiveCode(value);
-        if (socketRef.current) {
-          socketRef.current.emit(ACTIONS.CODE_CHANGE, {
-            id,
-            code: value
-          });
-        }
-      }
-    });
-
-    return () => {
-      if (editorRef.current) {
-        editorRef.current.destroy();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !editorRef.current) return;
 
     const syncHandler = ({ code }) => {
-      if (code !== null && editorRef.current) {
-        editorRef.current.dispatch({
+      if (code !== null) {
+        editorRef.current.view.dispatch({
           changes: {
             from: 0,
-            to: editorRef.current.state.doc.length,
-            insert: code
-          }
+            to: editorRef.current.view.state.doc.length,
+            insert: code,
+          },
         });
         setLiveCode(code);
       }
@@ -69,7 +41,7 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
     const accessHandler = ({ access }) => {
       toast.success(`Editor is ${access ? 'locked' : 'unlocked'}`);
       if (editorRef.current) {
-        editorRef.current.setEditable(!access);
+        editorRef.current.view.dom.setAttribute('contenteditable', !access);
       }
     };
 
@@ -80,10 +52,27 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
       socketRef.current.off(ACTIONS.SYNC_CODE, syncHandler);
       socketRef.current.off('access_change', accessHandler);
     };
-  }, [socketRef.current]);
+  }, [socketRef, id, setLiveCode]);
 
   return (
-    <div className="editor-container" ref={editorRef} />
+    <div className="editor-container">
+      <CodeMirror
+        ref={editorRef}
+        value=""
+        height="100%"
+        theme={material}
+        extensions={[javascript({ jsx: true }), closeBrackets()]}
+        basicSetup={{
+          lineNumbers: true,
+          foldGutter: true,
+          highlightActiveLine: true,
+          bracketMatching: true,
+          autocompletion: true,
+        }}
+        onChange={handleCodeChange}
+        editable={true}
+      />
+    </div>
   );
 }
 
