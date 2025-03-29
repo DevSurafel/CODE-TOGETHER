@@ -3,9 +3,10 @@ FROM node:18-alpine AS builder
 
 # Install dependencies first for better caching
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install -g npm@8.19.4 && \
-    npm install --legacy-peer-deps --no-audit
+    if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --no-audit; \
+    else npm install --legacy-peer-deps --no-audit; fi
 COPY . .
 RUN npm run build
 
