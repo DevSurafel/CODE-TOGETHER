@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@codemirror/autocomplete": "^6.0.0",
-    "@codemirror/closebrackets": "^6.0.0",
     "@codemirror/commands": "^6.3.0",
     "@codemirror/lang-javascript": "^6.1.9",
     "@codemirror/language": "^6.9.1",
@@ -30,7 +29,7 @@
     "react-scripts": "5.0.1",
     "socket.io-client": "4.7.4",
     "uuid": "9.0.1",
-    "web-vitals": "3.5orrendo",
+    "web-vitals": "3.5.0",
     "serve": "14.2.1"
   },
   "scripts": {
