@@ -1,12 +1,10 @@
 # Stage 1: Build
 FROM node:18-alpine AS builder
 
-# Install dependencies first for better caching
 WORKDIR /app
-COPY package.json ./
-RUN npm install -g npm@8.19.4 && \
-    if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --no-audit; \
-    else npm install --legacy-peer-deps --no-audit; fi
+COPY package.json package-lock.json ./
+RUN npm install -g npm@9.8.1 && \
+    npm ci --legacy-peer-deps --no-audit
 COPY . .
 RUN npm run build
 
