@@ -1,58 +1,61 @@
 import { io } from "socket.io-client";
 
-// Configuration constants
 const SOCKET_CONFIG = {
-  reconnectionAttempts: 5,          // More reliable than Infinity
-  reconnectionDelay: 5000,          // 5 seconds between attempts
-  timeout: 20000,                   // 20 second timeout
-  transports: ["websocket"],        // Force WebSocket transport
-  autoConnect: false,               // Manual connection
-  withCredentials: true             // Required for Render CORS
+  reconnectionAttempts: 5,
+  reconnectionDelay: 5000,
+  timeout: 20000,
+  transports: ["websocket"],
+  autoConnect: false,
+  withCredentials: true,
+  forceNew: true // Ensures fresh connection each time
 };
 
 export const initSocket = async () => {
   try {
-    // Get backend URL with fallbacks
-    const backendUrl = process.env.REACT_APP_API_URL || 
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 
                       window.REACT_APP_API_URL || 
-                      "http://localhost:8000";  // Match your backend port
+                      "http://localhost:8000";
 
-    console.log(`Connecting to WebSocket at: ${backendUrl}`);
+    console.log(`Connecting to: ${backendUrl}`);
     
-    const socket = io(backendUrl, SOCKET_CONFIG);
+    const socket = io(backendUrl, {
+      ...SOCKET_CONFIG,
+      query: {
+        clientType: 'web' // Helps identify client type in backend
+      }
+    });
 
     return await new Promise((resolve, reject) => {
-      // Success handler
+      const connectionTimeout = setTimeout(() => {
+        reject(new Error('Connection timeout (20s)'));
+      }, 20000);
+
       const connectHandler = () => {
-        console.log("WebSocket connected:", socket.id);
-        socket.off("connect_error", errorHandler); // Cleanup
+        clearTimeout(connectionTimeout);
+        console.log("Connected with ID:", socket.id);
         resolve(socket);
       };
 
-      // Error handler
       const errorHandler = (err) => {
-        console.error("Connection error:", err.message);
-        socket.off("connect", connectHandler); // Cleanup
-        reject(new Error(`Connection failed: ${err.message}`));
+        clearTimeout(connectionTimeout);
+        console.error("Connection failed:", err.message);
+        reject(new Error(`Failed to connect: ${err.message}`));
       };
 
-      // Set temporary listeners
-      socket.once("connect", connectHandler);
-      socket.once("connect_error", errorHandler);
-
-      // Manually connect (since autoConnect is false)
+      socket.once('connect', connectHandler);
+      socket.once('connect_error', errorHandler);
       socket.connect();
     });
   } catch (error) {
-    console.error("WebSocket initialization error:", error);
-    throw new Error("Failed to initialize WebSocket connection");
+    console.error("Socket initialization error:", error);
+    throw error;
   }
 };
 
-// Optional: Export a clean disconnect function
 export const disconnectSocket = (socket) => {
-  if (socket) {
-    console.log("Disconnecting socket:", socket.id);
+  if (socket?.connected) {
+    console.log(`Disconnecting socket ${socket.id}`);
+    socket.removeAllListeners();
     socket.disconnect();
   }
 };
