@@ -63,3 +63,14 @@ docker-compose up --build
 Landing Page
 
 Editor View
+
+##📸 Demo  
+
+*Coming Soon
+
+## 🧑‍💻 Author   
+Surafel Diriba   
+Feel free to fork or reach out!
+
+## 📄 License   
+MIT License – use, modify, and distribute freely.
