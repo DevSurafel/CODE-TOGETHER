@@ -50,13 +50,14 @@ npm run dev
 docker-compose up --build
 ```
 
-## 🛠 Tech Stack    
-## Layer                	## Technology
+## 🛠 Tech Stack
 
--Frontend	              React, CodeMirror, Socket.IO Client
--Backend	              Node.js, Express, Socket.IO
--Execution	            Judge0 API
--Styling	              CSS3, Animated UI  
+| Layer      | Technology                         |
+|------------|-------------------------------------|
+| Frontend   | React, CodeMirror, Socket.IO Client|
+| Backend    | Node.js, Express, Socket.IO        |
+| Execution  | Judge0 API                         |
+| Styling    | CSS3, Animated UI                  |
 
 ## Screenshots  
 Landing Page
