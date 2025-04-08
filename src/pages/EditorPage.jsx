@@ -155,8 +155,9 @@ function EditorPage() {
     }
 
     try {
-      const encodedCode = btoa(unescape(encodeURIComponent(liveCode)));
-      const encodedInput = btoa(unescape(encodeURIComponent(input)) || '';
+      const encodedCode = btoa(encodeURIComponent(liveCode));
+      const safeInput = input || ''; // Ensure input is a string, default to empty string if falsy
+      const encodedInput = btoa(encodeURIComponent(safeInput));
 
       const options = {
         method: 'POST',
@@ -187,9 +188,9 @@ function EditorPage() {
       );
 
       const outputText = result.data.stdout 
-        ? decodeURIComponent(escape(atob(result.data.stdout))) 
+        ? atob(result.data.stdout) 
         : result.data.stderr
-          ? decodeURIComponent(escape(atob(result.data.stderr)))
+          ? atob(result.data.stderr)
           : result.data.status?.description || 'No output';
 
       setOutput(outputText);
