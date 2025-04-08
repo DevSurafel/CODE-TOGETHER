@@ -15,14 +15,11 @@ const SOCKET_CONFIG = {
 export const initSocket = async () => {
   try {
     const backendUrl = process.env.REACT_APP_BACKEND_URL || "https://ct-backend-dda5.onrender.com";
-
     console.log(`Connecting to: ${backendUrl}`);
     
     const socket = io(backendUrl, {
       ...SOCKET_CONFIG,
-      query: {
-        clientType: 'web'
-      },
+      query: { clientType: 'web' },
       path: '/socket.io'
     });
 
@@ -31,14 +28,21 @@ export const initSocket = async () => {
         reject(new Error('Connection timeout (20s)'));
       }, 20000);
 
-      const connectHandler = () => {
+      const cleanup = () => {
         clearTimeout(connectionTimeout);
+        socket.off('connect', connectHandler);
+        socket.off('connect_error', errorHandler);
+        socket.off('disconnect', errorHandler);
+      };
+
+      const connectHandler = () => {
+        cleanup();
         console.log("Connected with ID:", socket.id);
         resolve(socket);
       };
 
       const errorHandler = (err) => {
-        clearTimeout(connectionTimeout);
+        cleanup();
         console.error("Connection failed:", err);
         reject(new Error(`Failed to connect: ${err.message}`));
       };
