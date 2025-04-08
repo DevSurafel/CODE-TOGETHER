@@ -3,6 +3,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { material } from '@uiw/codemirror-theme-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { closeBrackets } from '@codemirror/autocomplete';
+import { foldGutter, foldKeymap } from '@codemirror/language';
 import { ACTIONS } from '../Action';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -11,9 +12,10 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
   const location = useLocation();
 
   // Handle code changes and emit to socket
-  const handleCodeChange = (value) => {
+  const handleCodeChange = (value, viewUpdate) => {
     setLiveCode(value);
-    if (socketRef.current) {
+    // Only emit if change originated from user input
+    if (viewUpdate?.origin !== 'setValue' && socketRef.current) {
       socketRef.current.emit(ACTIONS.CODE_CHANGE, {
         id,
         code: value,
@@ -33,6 +35,11 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
             to: editorRef.current.view.state.doc.length,
             insert: code,
           },
+          // Mark this as a programmatic change to avoid feedback loop
+          annotations: [{
+            type: 'origin',
+            value: 'setValue'
+          }]
         });
         setLiveCode(code);
       }
@@ -41,7 +48,7 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
     const accessHandler = ({ access }) => {
       toast.success(`Editor is ${access ? 'locked' : 'unlocked'}`);
       if (editorRef.current) {
-        editorRef.current.view.dom.setAttribute('contenteditable', !access);
+        editorRef.current.setEditable(!access);
       }
     };
 
@@ -61,13 +68,21 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
         value=""
         height="100%"
         theme={material}
-        extensions={[javascript({ jsx: true }), closeBrackets()]}
+        extensions={[
+          javascript({ jsx: true }),
+          closeBrackets(),
+          foldGutter(),
+          EditorView.lineWrapping
+        ]}
         basicSetup={{
           lineNumbers: true,
           foldGutter: true,
           highlightActiveLine: true,
           bracketMatching: true,
           autocompletion: true,
+          closeBrackets: true,
+          closeTags: true,
+          foldKeymap
         }}
         onChange={handleCodeChange}
         editable={true}
