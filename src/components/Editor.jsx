@@ -4,6 +4,7 @@ import { material } from '@uiw/codemirror-theme-material';
 import CodeMirror from '@uiw/react-codemirror';
 import { closeBrackets } from '@codemirror/autocomplete';
 import { foldGutter, foldKeymap } from '@codemirror/language';
+import { EditorView } from '@codemirror/view';
 import { ACTIONS } from '../Action';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
