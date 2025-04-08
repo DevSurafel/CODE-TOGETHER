@@ -12,9 +12,7 @@ const SOCKET_CONFIG = {
 
 export const initSocket = async () => {
   try {
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || 
-                      window.REACT_APP_API_URL || 
-                      "http://localhost:8000";
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || "https://ct-backend-dda5.onrender.com";
 
     console.log(`Connecting to: ${backendUrl}`);
     
