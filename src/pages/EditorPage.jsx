@@ -29,7 +29,7 @@ function EditorPage() {
   const [langCode, setLangCode] = useState('52');
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
-  const { id } = useParams();
+  const { id } = useParams(); // This is the roomId
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ function EditorPage() {
           });
 
           socketRef.current.emit(ACTIONS.JOIN, {
-            id,
+            roomId: id, // Changed from 'id' to 'roomId' to match backend
             username: location.state?.username || 'Anonymous',
           }, (response) => {
             if (response?.error) {
@@ -81,7 +81,7 @@ function EditorPage() {
           attempts++;
           if (attempts < maxAttempts) {
             console.log(`Retrying connection (${attempts}/${maxAttempts})...`);
-            setTimeout(tryConnect, 5000); // Retry after 5 seconds
+            setTimeout(tryConnect, 5000);
           } else {
             handleError(err, attempts);
           }
@@ -126,7 +126,7 @@ function EditorPage() {
       return;
     }
     socketRef.current?.emit(ACTIONS.DOUBT, {
-      id,
+      roomId: id, // Changed from 'id' to 'roomId'
       username: location.state?.username,
       doubt,
     });
@@ -137,7 +137,7 @@ function EditorPage() {
     const newAccess = !access;
     setAccess(newAccess);
     socketRef.current?.emit('lock_access', {
-      id,
+      roomId: id, // Changed from 'id' to 'roomId'
       access: newAccess,
     });
   };
