@@ -1,10 +1,13 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import ACTIONS from '../Action';
 import Client from '../components/Client';
 import Editor from '../components/Editor';
+import Doubt from '../components/Doubt';
 import { initSocket } from '../Socket';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import logo from '../logo.webp';
 import DoubtSection from '../components/DoubtSection';
 import bglogo from '../images/bglogo.png';
 import { AiOutlineMenu } from 'react-icons/ai';
@@ -20,77 +23,66 @@ function EditorPage() {
   const [doubt, setDoubt] = useState('');
   const [allDoubts, setAllDoubts] = useState({});
   const [liveCode, setLiveCode] = useState('');
-  const [clients, setClients] = useState([]);
+  const [clients, setclients] = useState([]);
   const [access, setAccess] = useState(false);
   const [terminal, setTerminal] = useState(false);
   const [output, setOutput] = useState('');
   const [editorOpen, setEditorOpen] = useState(false);
   const [input, setInput] = useState('');
   const [langCode, setLangCode] = useState('52');
-  const [isWaitingForInput, setIsWaitingForInput] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [isWaitingForInput, setIsWaitingForInput] = useState(false); // New state
+  const handleChat = (e) => {
+    e.preventDefault();
+    setChatShown(true);
+  };
+  const [isTeacher, setIsTeacher] = useState(false);
   const { id } = useParams();
   const socketRef = useRef(null);
 
   useEffect(() => {
     const init = async () => {
-      try {
-        socketRef.current = await initSocket();
-        setSocketConnected(true);
-        
-        socketRef.current.on('connect_error', (err) => {
-          console.error('Connection error:', err);
-          handleError(err);
-        });
-        
-        socketRef.current.on('connect_failed', (err) => {
-          console.error('Connection failed:', err);
-          handleError(err);
-        });
-
-        socketRef.current.emit(ACTIONS.JOIN, {
-          id,
-          username: location.state?.username || 'Anonymous',
-        });
-
-        socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username, socketId }) => {
-          setAllDoubts(doubts);
-          toast.success(`${username} asked a doubt!`);
-        });
-
-        socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
-          setClients(clients);
-          if (username !== location.state?.username) {
-            toast.success(`${username} joined the room.`);
-          }
-        });
-
-        socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
-          toast.success(`${username} left the room.`);
-          setClients((prev) => prev.filter((item) => item.socketId !== socketId));
-        });
-
-      } catch (err) {
-        handleError(err);
+      socketRef.current = await initSocket();
+      socketRef.current.on('connect_error', (err) => handleerror(err));
+      socketRef.current.on('connect_failed', (err) => handleerror(err));
+      function handleerror(err) {
+        toast.error('Socket connection failed, try again!');
+        navigate('/');
       }
-    };
+      socketRef.current.emit(ACTIONS.JOIN, {
+        id,
+        username: location.state.username,
+      });
+      // Listening for doubt event
+      socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username, socketId }) => {
+        setAllDoubts(doubts);
+        toast.success(`${username} asked a doubt!`);
+      });
+      // Listening for joined event
+      socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
+        setclients(clients);
+        if (username !== location.state.username) {
+          toast.success(`${username} joined the room.`);
+        }
+      });
 
-    const handleError = (err) => {
-      console.error('Socket error:', err);
-      toast.error('Connection failed, try again!');
-      navigate('/');
+      // Disconnecting the user listener
+      socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+        toast.success(`${username} left the room.`);
+        setclients((prev) => {
+          return prev.filter((item) => {
+            return item.socketId !== socketId;
+          });
+        });
+      });
     };
-
     init();
-
+    editorRef.current.setOption('readOnly', false);
     return () => {
-      if (socketRef.current) {
-        socketRef.current.off(ACTIONS.JOINED);
-        socketRef.current.off(ACTIONS.DISCONNECTED);
-        socketRef.current.disconnect();
-      }
+      socketRef.current.disconnect();
+      socketRef.current.off(ACTIONS.JOINED);
+      socketRef.current.off(ACTIONS.DISCONNECTED);
     };
-  }, [id, navigate, location.state]);
+  }, []);
 
   if (!location.state) {
     return <Navigate to="/" />;
@@ -195,6 +187,7 @@ function EditorPage() {
 
   return (
     <div className="mainWrap" style={{ gridTemplateColumns: menuOpen ? `${editorOpen ? '230px 1fr 0.4fr' : '230px 1fr'}` : `${editorOpen ? '0 1fr 0.4fr' : '0 1fr'}` }}>
+      <div className="aside" style={{ position: 'relative' }}>
         <div className="menu-options" style={{ left: menuOpen ? '230px' : '0px' }} onClick={() => setMenuOpen(!menuOpen)}>
           <AiOutlineMenu />
         </div>
@@ -226,15 +219,8 @@ function EditorPage() {
           Leave
         </button>
       </div>
-     <div className="editorWrap">
-        <Editor 
-          socketRef={socketRef} 
-          id={id} 
-          setLiveCode={setLiveCode} 
-          access={access} 
-          editorRef={editorRef} 
-          connected={socketConnected}
-        />
+      <div className="editorWrap">
+        <Editor socketRef={socketRef} id={id} setLiveCode={setLiveCode} access={access} editorRef={editorRef} />
       </div>
       <div className="terminal">
         {editorOpen && <Terminal output={output} terminal={terminal} setEditorOpen={setEditorOpen} setInput={setInput} input={input} runCode={runCode} isWaitingForInput={isWaitingForInput} />}
