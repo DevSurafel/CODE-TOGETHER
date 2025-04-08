@@ -3,8 +3,8 @@ import { io } from "socket.io-client";
 const SOCKET_CONFIG = {
   reconnectionAttempts: 5,
   reconnectionDelay: 5000,
-  timeout: 20000,
-  transports: ["websocket"],
+  timeout: 30000, // Increased to 30s to handle Render wake-up delays
+  transports: ["websocket", "polling"], // Added polling fallback
   autoConnect: false,
   withCredentials: true,
   forceNew: true,
@@ -25,8 +25,9 @@ export const initSocket = async () => {
 
     return await new Promise((resolve, reject) => {
       const connectionTimeout = setTimeout(() => {
-        reject(new Error('Connection timeout (20s)'));
-      }, 20000);
+        console.log('Connection timed out after 30s');
+        reject(new Error('Connection timeout (30s)'));
+      }, 30000);
 
       const cleanup = () => {
         clearTimeout(connectionTimeout);
