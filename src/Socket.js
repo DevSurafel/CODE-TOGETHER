@@ -7,7 +7,9 @@ const SOCKET_CONFIG = {
   transports: ["websocket"],
   autoConnect: false,
   withCredentials: true,
-  forceNew: true // Ensures fresh connection each time
+  forceNew: true,
+  secure: true, // Ensure secure connection
+  rejectUnauthorized: false // Only for development if using self-signed certs
 };
 
 export const initSocket = async () => {
@@ -19,8 +21,9 @@ export const initSocket = async () => {
     const socket = io(backendUrl, {
       ...SOCKET_CONFIG,
       query: {
-        clientType: 'web' // Helps identify client type in backend
-      }
+        clientType: 'web'
+      },
+      path: '/socket.io' // Explicit path
     });
 
     return await new Promise((resolve, reject) => {
@@ -36,12 +39,13 @@ export const initSocket = async () => {
 
       const errorHandler = (err) => {
         clearTimeout(connectionTimeout);
-        console.error("Connection failed:", err.message);
+        console.error("Connection failed:", err);
         reject(new Error(`Failed to connect: ${err.message}`));
       };
 
       socket.once('connect', connectHandler);
       socket.once('connect_error', errorHandler);
+      socket.once('disconnect', errorHandler);
       socket.connect();
     });
   } catch (error) {
