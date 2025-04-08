@@ -8,8 +8,8 @@ const SOCKET_CONFIG = {
   autoConnect: false,
   withCredentials: true,
   forceNew: true,
-  secure: true, // Ensure secure connection
-  rejectUnauthorized: false // Only for development if using self-signed certs
+  secure: true,
+  rejectUnauthorized: false
 };
 
 export const initSocket = async () => {
@@ -23,7 +23,7 @@ export const initSocket = async () => {
       query: {
         clientType: 'web'
       },
-      path: '/socket.io' // Explicit path
+      path: '/socket.io'
     });
 
     return await new Promise((resolve, reject) => {
