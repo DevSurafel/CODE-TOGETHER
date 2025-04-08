@@ -34,62 +34,80 @@ function EditorPage() {
 
   useEffect(() => {
     const init = async () => {
-      try {
-        socketRef.current = await initSocket();
-        setSocketConnected(true);
-        
-        socketRef.current.on('connect_error', (err) => {
-          console.error('Connection error:', err);
-          handleError(err);
-        });
-        
-        socketRef.current.on('connect_failed', (err) => {
-          console.error('Connection failed:', err);
-          handleError(err);
-        });
+      let attempts = 0;
+      const maxAttempts = 3;
 
-        socketRef.current.emit(ACTIONS.JOIN, {
-          id,
-          username: location.state?.username || 'Anonymous',
-        });
+      const tryConnect = async () => {
+        try {
+          socketRef.current = await initSocket();
+          setSocketConnected(true);
 
-        socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username, socketId }) => {
-          setAllDoubts(doubts);
-          toast.success(`${username} asked a doubt!`);
-        });
+          socketRef.current.on('connect_error', (err) => {
+            console.error('Connection error:', err);
+            handleError(err, attempts);
+          });
 
-        socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
-          setClients(clients);
-          if (username !== location.state?.username) {
-            toast.success(`${username} joined the room.`);
+          socketRef.current.on('connect_failed', (err) => {
+            console.error('Connection failed:', err);
+            handleError(err, attempts);
+          });
+
+          socketRef.current.emit(ACTIONS.JOIN, {
+            id,
+            username: location.state?.username || 'Anonymous',
+          }, (response) => {
+            if (response?.error) {
+              throw new Error(response.error);
+            }
+          });
+
+          socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username, socketId }) => {
+            setAllDoubts(doubts);
+            toast.success(`${username} asked a doubt!`);
+          });
+
+          socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
+            setClients(clients);
+            if (username !== location.state?.username) {
+              toast.success(`${username} joined the room.`);
+            }
+          });
+
+          socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+            toast.success(`${username} left the room.`);
+            setClients((prev) => prev.filter((item) => item.socketId !== socketId));
+          });
+        } catch (err) {
+          attempts++;
+          if (attempts < maxAttempts) {
+            console.log(`Retrying connection (${attempts}/${maxAttempts})...`);
+            setTimeout(tryConnect, 5000); // Retry after 5 seconds
+          } else {
+            handleError(err, attempts);
           }
-        });
+        }
+      };
 
-        socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
-          toast.success(`${username} left the room.`);
-          setClients((prev) => prev.filter((item) => item.socketId !== socketId));
-        });
+      const handleError = (err, attemptCount) => {
+        console.error('Socket error:', err);
+        if (attemptCount >= maxAttempts) {
+          toast.error('Connection failed after retries, try again later!');
+          navigate('/');
+        }
+      };
 
-      } catch (err) {
-        handleError(err);
-      }
-    };
+      tryConnect();
 
-    const handleError = (err) => {
-      console.error('Socket error:', err);
-      toast.error('Connection failed, try again!');
-      navigate('/');
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.off(ACTIONS.JOINED);
+          socketRef.current.off(ACTIONS.DISCONNECTED);
+          socketRef.current.disconnect();
+        }
+      };
     };
 
     init();
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off(ACTIONS.JOINED);
-        socketRef.current.off(ACTIONS.DISCONNECTED);
-        socketRef.current.disconnect();
-      }
-    };
   }, [id, navigate, location.state]);
 
   const copyRoomId = async () => {
@@ -156,7 +174,7 @@ function EditorPage() {
 
     try {
       const encodedCode = btoa(encodeURIComponent(liveCode));
-      const safeInput = input || ''; // Ensure input is a string, default to empty string if falsy
+      const safeInput = input || '';
       const encodedInput = btoa(encodeURIComponent(safeInput));
 
       const options = {
