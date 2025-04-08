@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import ACTIONS from '../Action';
 import Client from '../components/Client';
@@ -98,6 +97,11 @@ function EditorPage() {
       };
 
       tryConnect();
+      
+      // Added this line to set editor readOnly property after initialization
+      if (editorRef.current) {
+        editorRef.current.setOption('readOnly', false);
+      }
 
       return () => {
         if (socketRef.current) {
