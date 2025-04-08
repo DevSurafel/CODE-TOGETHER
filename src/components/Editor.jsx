@@ -1,8 +1,8 @@
-
 import React, { useEffect, useRef } from 'react';
+import { EditorView, basicSetup } from '@codemirror/basic-setup';
+import { EditorState } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { material } from '@uiw/codemirror-theme-material';
-import CodeMirror from '@uiw/react-codemirror';
 import { closeBrackets } from '@codemirror/autocomplete';
 import { ACTIONS } from '../Action';
 import { useLocation } from 'react-router-dom';
@@ -10,72 +10,94 @@ import { toast } from 'react-hot-toast';
 
 function Editor({ socketRef, id, setLiveCode, editorRef }) {
   const location = useLocation();
+  
+  useEffect(() => {
+    async function init() {
+      const textArea = document.getElementById('realtime');
+      
+      // Create initial state for the editor
+      const startState = EditorState.create({
+        doc: textArea.value,
+        extensions: [
+          basicSetup,
+          javascript({ jsx: true }),
+          closeBrackets(),
+          material,
+          EditorView.updateListener.of(update => {
+            if (update.docChanged) {
+              const code = update.state.doc.toString();
+              setLiveCode(code);
+              if (socketRef.current) {
+                socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+                  id,
+                  code
+                });
+              }
+            }
+          })
+        ]
+      });
 
-  // Handle code changes and emit to socket
-  const handleCodeChange = (value) => {
-    setLiveCode(value);
-    if (socketRef.current) {
-      socketRef.current.emit(ACTIONS.CODE_CHANGE, {
-        id,
-        code: value,
+      // Create and store the editor view
+      editorRef.current = new EditorView({
+        state: startState,
+        parent: textArea.parentNode,
+        replace: textArea
       });
     }
-  };
-
-  // Sync code and access changes via socket
-  useEffect(() => {
-    if (!socketRef.current || !editorRef.current) return;
-
-    const syncHandler = ({ code }) => {
-      if (code !== null) {
-        editorRef.current.view.dispatch({
-          changes: {
-            from: 0,
-            to: editorRef.current.view.state.doc.length,
-            insert: code,
-          },
-        });
-        setLiveCode(code);
-      }
-    };
-
-    const accessHandler = ({ access }) => {
-      toast.success(`Editor is ${access ? 'locked' : 'unlocked'}`);
-      if (editorRef.current) {
-        editorRef.current.view.dom.setAttribute('contenteditable', !access);
-      }
-    };
-
-    socketRef.current.on(ACTIONS.SYNC_CODE, syncHandler);
-    socketRef.current.on('access_change', accessHandler);
-
+    
+    if (document.getElementById('realtime')) {
+      init();
+    }
+    
+    // Cleanup function
     return () => {
-      socketRef.current.off(ACTIONS.SYNC_CODE, syncHandler);
-      socketRef.current.off('access_change', accessHandler);
+      if (editorRef.current) {
+        editorRef.current.destroy();
+      }
     };
-  }, [socketRef, id, setLiveCode]);
+  }, []);
+
+  useEffect(() => {
+    if (socketRef.current) {
+      // Handle code sync
+      socketRef.current.on(ACTIONS.SYNC_CODE, ({ code }) => {
+        if (code !== null && editorRef.current) {
+          const transaction = editorRef.current.state.update({
+            changes: {
+              from: 0,
+              to: editorRef.current.state.doc.length,
+              insert: code
+            }
+          });
+          editorRef.current.dispatch(transaction);
+          setLiveCode(code);
+        }
+      });
+      
+      // Handle access change
+      socketRef.current.on('access_change', ({ access }) => {
+        toast.success(`Editor is ${access ? 'lock' : 'unlock'}`);
+        if (editorRef.current) {
+          // In CM6, we control editability through the DOM
+          editorRef.current.dom.contentEditable = !access;
+          editorRef.current.dom.classList.toggle('readonly', access);
+        }
+      });
+      
+      // Cleanup listeners when component unmounts
+      return () => {
+        socketRef.current.off(ACTIONS.SYNC_CODE);
+        socketRef.current.off('access_change');
+      };
+    }
+  }, [socketRef.current]);
 
   return (
     <div className="editor-container">
-      <CodeMirror
-        ref={editorRef}
-        value=""
-        height="100%"
-        theme={material}
-        extensions={[javascript({ jsx: true }), closeBrackets()]}
-        basicSetup={{
-          lineNumbers: true,
-          foldGutter: true,
-          highlightActiveLine: true,
-          bracketMatching: true,
-          autocompletion: true,
-        }}
-        onChange={handleCodeChange}
-        editable={true}
-      />
+      <textarea id="realtime" defaultValue="" style={{ display: 'none' }}></textarea>
     </div>
   );
 }
 
 export default Editor;
-
