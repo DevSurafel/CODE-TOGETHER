@@ -1,72 +1,68 @@
-import React, { useEffect, useRef } from 'react';
-import { javascript } from '@codemirror/lang-javascript';
-import { material } from '@uiw/codemirror-theme-material';
-import CodeMirror from '@uiw/react-codemirror';
-import { closeBrackets } from '@codemirror/autocomplete';
-import { ACTIONS } from '../Action';
+
+import React, { useEffect, useRef, useState } from 'react'
+import CodeMirror from 'codemirror';
+import 'codemirror/mode/javascript/javascript'
+import 'codemirror/theme/material.css'
+import 'codemirror/addon/edit/closetag'
+import 'codemirror/addon/edit/closebrackets'
+import 'codemirror/lib/codemirror.css'
+import ACTIONS from '../Action';
 import { useLocation } from 'react-router-dom';
-import { toast } from 'react-hot-toast';function Editor({ socketRef, id, setLiveCode, editorRef }) {
-  const location = useLocation();  // Handle code changes and emit to socket
-  const handleCodeChange = (value) => {
-    setLiveCode(value);
-    if (socketRef.current) {
-      socketRef.current.emit(ACTIONS.CODE_CHANGE, {
-        id,
-        code: value,
+import { toast } from 'react-hot-toast';
+
+function Editor({ socketRef, id, setLiveCode, editorRef }) {
+  // const editorRef = useRef(null);
+  const location = useLocation();
+  useEffect(() => {
+    async function init() {
+      editorRef.current = CodeMirror.fromTextArea(document.getElementById('realtime'), {
+        mode: { name: 'javascript', json: true },
+        theme: 'material',
+        autoCloseTags: true,
+        autoCloseBrackets: true,
+        lineNumbers: true,
+        lineWrapping: true,
+        extraKeys: { "Ctrl-Q": function (cm) { cm.foldCode(cm.getCursor()); } },
+        foldGutter: true,
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+      });
+
+      editorRef.current.on('change', (instance, changes) => {
+        const { origin } = changes;
+        const code = instance.getValue();
+        setLiveCode(code)
+        if (origin !== 'setValue') {
+          socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+            id,
+            code
+          })
+        }
       });
     }
-  };  // Sync code and access changes via socket
+    init();
+  }, [])
   useEffect(() => {
-    if (!socketRef.current || !editorRef.current) return;
+    if (socketRef.current) {
+      socketRef.current.on(ACTIONS.SYNC_CODE, ({ code }) => {
+        if (code !== null) {
+          editorRef.current.setValue(code);
+          setLiveCode(code);
+        }
+      })
+      socketRef.current.on('access_change', ({ access }) => {
+        toast.success(`Editor is ${access ? 'lock' : 'unlock'}`)
+        editorRef.current.setOption('readOnly', access);
+      })
+    }
+    return () => {
+      socketRef.current.off(ACTIONS.SYNC_CODE)
+    }
+  }, [socketRef.current])
+  return (
+    <textarea id='realtime' disabled="true">
 
-const syncHandler = ({ code }) => {
-  if (code !== null) {
-    editorRef.current.view.dispatch({
-      changes: {
-        from: 0,
-        to: editorRef.current.view.state.doc.length,
-        insert: code,
-      },
-    });
-    setLiveCode(code);
-  }
-};
-
-const accessHandler = ({ access }) => {
-  toast.success(`Editor is ${access ? 'locked' : 'unlocked'}`);
-  if (editorRef.current) {
-    editorRef.current.view.dom.setAttribute('contenteditable', !access);
-  }
-};
-
-socketRef.current.on(ACTIONS.SYNC_CODE, syncHandler);
-socketRef.current.on('access_change', accessHandler);
-
-return () => {
-  socketRef.current.off(ACTIONS.SYNC_CODE, syncHandler);
-  socketRef.current.off('access_change', accessHandler);
-};
-
-  }, [socketRef, id, setLiveCode]);  return (
-    <div className="editor-container">
-      <CodeMirror
-        ref={editorRef}
-        value=""
-        height="100%"
-        theme={material}
-        extensions={[javascript({ jsx: true }), closeBrackets()]}
-        basicSetup={{
-          lineNumbers: true,
-          foldGutter: true,
-          highlightActiveLine: true,
-          bracketMatching: true,
-          autocompletion: true,
-        }}
-        onChange={handleCodeChange}
-        editable={true}
-      />
-    </div>
-  );
+    </textarea>
+  )
 }
-export default Editor;
 
+export default Editor
