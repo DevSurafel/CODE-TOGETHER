@@ -3,7 +3,7 @@ import ACTIONS from '../Action';
 import Client from '../components/Client';
 import Editor from '../components/Editor';
 import { initSocket } from '../Socket';
-import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import DoubtSection from '../components/DoubtSection';
 import bglogo from '../images/bglogo.png';
@@ -12,9 +12,12 @@ import axios from 'axios';
 import Terminal from '../components/Terminal';
 
 function EditorPage() {
+  const socketRef = useRef(null);
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { id: roomId } = useParams();
+  
   const [isChatShown, setChatShown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(true);
   const [doubt, setDoubt] = useState('');
@@ -28,78 +31,95 @@ function EditorPage() {
   const [input, setInput] = useState('');
   const [langCode, setLangCode] = useState('52');
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
-  const { id } = useParams();
-  const socketRef = useRef(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    // Check if we have username from location state
+    if (!location.state?.username) {
+      navigate('/');
+      return;
+    }
+
     const init = async () => {
       try {
         socketRef.current = await initSocket();
         
+        // Socket event handlers
+        socketRef.current.on('connect', () => {
+          setIsConnected(true);
+          console.log('Socket connected successfully');
+          
+          socketRef.current.emit(ACTIONS.JOIN, {
+            roomId,
+            username: location.state.username,
+          });
+        });
+
         socketRef.current.on('connect_error', (err) => {
           console.error('Connection error:', err);
-          toast.error('Socket connection failed, try again!');
-          navigate('/');
+          toast.error('Failed to connect to server');
+          handleDisconnect();
         });
 
         socketRef.current.on('connect_failed', (err) => {
           console.error('Connection failed:', err);
-          toast.error('Socket connection failed, try again!');
-          navigate('/');
+          toast.error('Connection failed');
+          handleDisconnect();
         });
 
-        // Join the room using the correct parameter structure
-        socketRef.current.emit(ACTIONS.JOIN, {
-          roomId: id,
-          username: location.state?.username || 'Anonymous',
+        socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
+          setClients(clients);
+          if (username !== location.state.username) {
+            toast.success(`${username} joined the room`);
+          }
         });
 
-        // Listening for doubt event
-        socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username, socketId }) => {
+        socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username }) => {
           setAllDoubts(doubts);
           toast.success(`${username} asked a doubt!`);
         });
 
-        // Listening for joined event
-        socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
-          setClients(clients);
-          if (username !== location.state?.username) {
-            toast.success(`${username} joined the room.`);
-          }
+        socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+          toast.success(`${username} left the room`);
+          setClients(prev => prev.filter(client => client.socketId !== socketId));
         });
 
-        // Disconnecting the user listener
-        socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
-          toast.success(`${username} left the room.`);
-          setClients((prev) => prev.filter((item) => item.socketId !== socketId));
-        });
-        
-        if (editorRef.current) {
-          editorRef.current.setOption('readOnly', false);
-        }
       } catch (err) {
-        console.error('Socket initialization error:', err);
-        toast.error('Failed to connect to server');
-        navigate('/');
+        console.error('Initialization error:', err);
+        toast.error('Failed to initialize editor');
+        handleDisconnect();
       }
     };
 
     init();
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.off(ACTIONS.JOINED);
-        socketRef.current.off(ACTIONS.DISCONNECTED);
-        socketRef.current.off(ACTIONS.DOUBT);
-        socketRef.current.disconnect();
-      }
+      cleanupSocket();
     };
-  }, [id, navigate, location.state]);
+  }, [roomId, location.state?.username, navigate]);
+
+  const handleDisconnect = () => {
+    cleanupSocket();
+    navigate('/');
+  };
+
+  const cleanupSocket = () => {
+    if (socketRef.current) {
+      socketRef.current.off('connect');
+      socketRef.current.off('connect_error');
+      socketRef.current.off('connect_failed');
+      socketRef.current.off(ACTIONS.JOINED);
+      socketRef.current.off(ACTIONS.DISCONNECTED);
+      socketRef.current.off(ACTIONS.DOUBT);
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+  };
 
   const copyRoomId = async () => {
     try {
-      await navigator.clipboard.writeText(id);
-      toast.success('Room ID copied to clipboard!');
+      await navigator.clipboard.writeText(roomId);
+      toast.success('Room ID copied!');
     } catch (err) {
       toast.error('Failed to copy room ID');
     }
@@ -107,13 +127,13 @@ function EditorPage() {
 
   const askDoubt = (e) => {
     e.preventDefault();
-    if (doubt.trim() === '') {
+    if (!doubt.trim()) {
       toast.error('Doubt cannot be empty');
       return;
     }
     socketRef.current?.emit(ACTIONS.DOUBT, {
-      roomId: id,
-      username: location.state?.username,
+      roomId,
+      username: location.state.username,
       doubt,
     });
     setDoubt('');
@@ -123,12 +143,13 @@ function EditorPage() {
     const newAccess = !access;
     setAccess(newAccess);
     socketRef.current?.emit('lock_access', {
-      roomId: id,
+      roomId,
       access: newAccess,
     });
   };
 
   const leaveRoom = () => {
+    cleanupSocket();
     navigate('/');
     toast.success('You left the room');
   };
@@ -198,21 +219,18 @@ function EditorPage() {
           : result.data.status?.description || 'No output';
 
       setOutput(outputText);
-      if (outputText.includes('Enter your name:')) {
-        setIsWaitingForInput(true);
-      } else {
-        setIsWaitingForInput(false);
-      }
+      setIsWaitingForInput(outputText.includes('Enter your name:'));
       setTerminal(true);
     } catch (error) {
       console.error('Execution error:', error);
-      setOutput('Error executing code. Please try again.');
+      setOutput('Error executing code');
       setTerminal(true);
     }
   };
 
-  if (!location.state) {
-    return <Navigate to="/" />;
+  // Render loading state while connecting
+  if (!isConnected) {
+    return <div>Connecting to room...</div>;
   }
 
   return (
@@ -272,15 +290,15 @@ function EditorPage() {
       <div className="editorWrap">
         <Editor 
           socketRef={socketRef} 
-          id={id} 
+          id={roomId} 
           setLiveCode={setLiveCode} 
           access={access} 
           editorRef={editorRef}
         />
       </div>
       
-      <div className="terminal">
-        {editorOpen && (
+      {editorOpen && (
+        <div className="terminal">
           <Terminal 
             output={output} 
             terminal={terminal} 
@@ -290,8 +308,8 @@ function EditorPage() {
             runCode={runCode} 
             isWaitingForInput={isWaitingForInput} 
           />
-        )}
-      </div>
+        </div>
+      )}
       
       {clients[0]?.username === location.state?.username && (
         <button 
@@ -311,10 +329,7 @@ function EditorPage() {
         Download Code
       </button>
       
-      <button className="btn doubtBtn" onClick={(e) => {
-        e.preventDefault();
-        setChatShown(true);
-      }}>
+      <button className="btn doubtBtn" onClick={() => setChatShown(true)}>
         Ask a doubt?
       </button>
       
