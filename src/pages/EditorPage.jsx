@@ -43,11 +43,12 @@ function EditorPage() {
         
         socketRef.current.on('connect', () => {
           console.log('Socket connected');
+          const username = location.state?.username || 'Anonymous';
           socketRef.current.emit(ACTIONS.JOIN, {
             roomId,
-            username: location.state?.username || 'Anonymous',
+            username,
           });
-          console.log('JOIN emitted with:', { roomId, username: location.state?.username });
+          console.log('JOIN emitted with:', { roomId, username });
         });
 
         socketRef.current.on('connect_error', (err) => {
@@ -219,7 +220,7 @@ function EditorPage() {
       setIsWaitingForInput(outputText.includes('Enter your name:'));
       setTerminal(true);
     } catch (error) {
-      console.error('Execution error:', error); // Fixed 'errr' to 'error'
+      console.error('Execution error:', error);
       setOutput('Error executing code');
       setTerminal(true);
     }
@@ -239,7 +240,7 @@ function EditorPage() {
         backgroundColor: 'rgba(0, 0, 0, 0.8)'
       }}
     >
-      <div className="aside" style={{ position: 'relative' }}>
+      <div className="aside" style={{ position: 'relative', backgroundColor: '#1a1a1a', color: 'white' }}>
         <div 
           className="menu-options" 
           style={{ left: menuOpen ? '230px' : '0px' }} 
@@ -283,7 +284,15 @@ function EditorPage() {
         </button>
       </div>
       
-      <div className="editorWrap" style={{ backgroundColor: '#fff' }}>
+      <div 
+        className="editorWrap" 
+        style={{ 
+          backgroundColor: '#fff', 
+          height: '100%', 
+          width: '100%', 
+          overflow: 'auto' 
+        }}
+      >
         <Editor 
           socketRef={socketRef} 
           id={roomId} 
@@ -294,7 +303,15 @@ function EditorPage() {
       </div>
       
       {editorOpen && (
-        <div className="terminal" style={{ backgroundColor: '#000', color: '#fff' }}>
+        <div 
+          className="terminal" 
+          style={{ 
+            backgroundColor: '#000', 
+            color: '#fff', 
+            height: '100%', 
+            overflow: 'auto' 
+          }}
+        >
           <Terminal 
             output={output} 
             terminal={terminal} 
