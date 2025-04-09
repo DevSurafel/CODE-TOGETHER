@@ -11,17 +11,17 @@ import { toast } from 'react-hot-toast';
 function Editor({ socketRef, id, setLiveCode, access, editorRef }) {
   const internalEditorRef = useRef(null);
 
-  // Properly assign the ref
   useEffect(() => {
+    console.log('Editor component mounted');
     if (internalEditorRef.current && editorRef) {
       editorRef.current = internalEditorRef.current;
+      console.log('Editor ref assigned');
     }
   }, [editorRef]);
 
-  // Handle code changes and emit to socket
   const handleCodeChange = (value, viewUpdate) => {
+    console.log('Code changed:', value);
     setLiveCode(value);
-    // Only emit if change originated from user input
     if (viewUpdate?.transactions?.[0]?.annotation?.type !== 'setValue' && socketRef.current) {
       socketRef.current.emit(ACTIONS.CODE_CHANGE, {
         id,
@@ -30,11 +30,11 @@ function Editor({ socketRef, id, setLiveCode, access, editorRef }) {
     }
   };
 
-  // Sync code and access changes via socket
   useEffect(() => {
     if (!socketRef.current) return;
 
     const syncHandler = ({ code }) => {
+      console.log('SYNC_CODE received:', code);
       if (code !== null && internalEditorRef.current) {
         const view = internalEditorRef.current.view;
         view.dispatch({
@@ -43,15 +43,14 @@ function Editor({ socketRef, id, setLiveCode, access, editorRef }) {
             to: view.state.doc.length,
             insert: code,
           },
-          annotations: [{
-            type: 'setValue'
-          }]
+          annotations: [{ type: 'setValue' }]
         });
         setLiveCode(code);
       }
     };
 
     const accessHandler = ({ access }) => {
+      console.log('lock_access received:', access);
       toast.success(`Editor is ${access ? 'locked' : 'unlocked'}`);
       if (internalEditorRef.current) {
         internalEditorRef.current.view.dispatch({
@@ -61,9 +60,7 @@ function Editor({ socketRef, id, setLiveCode, access, editorRef }) {
     };
 
     socketRef.current.on(ACTIONS.SYNC_CODE, syncHandler);
-    socketRef.current.on('lock_access', accessHandler); // Changed from 'access_change' to match backend
-
-    // Request initial sync when connecting
+    socketRef.current.on('lock_access', accessHandler);
     socketRef.current.emit(ACTIONS.SYNC_CODE, { id });
 
     return () => {
@@ -73,7 +70,7 @@ function Editor({ socketRef, id, setLiveCode, access, editorRef }) {
   }, [socketRef, id, setLiveCode]);
 
   return (
-    <div className="editor-container">
+    <div className="editor-container" style={{ height: '100%', width: '100%' }}>
       <CodeMirror
         ref={internalEditorRef}
         value=""
