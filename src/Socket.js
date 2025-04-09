@@ -3,8 +3,8 @@ import { io } from "socket.io-client";
 const SOCKET_CONFIG = {
   reconnectionAttempts: 5,
   reconnectionDelay: 5000,
-  timeout: 30000, // Increased to 30s to handle Render wake-up delays
-  transports: ["websocket", "polling"], // Added polling fallback
+  timeout: 30000,
+  transports: ["websocket", "polling"],
   autoConnect: false,
   withCredentials: true,
   forceNew: true,
@@ -23,9 +23,10 @@ export const initSocket = async () => {
       path: '/socket.io'
     });
 
-    return await new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const connectionTimeout = setTimeout(() => {
         console.log('Connection timed out after 30s');
+        socket.disconnect();
         reject(new Error('Connection timeout (30s)'));
       }, 30000);
 
@@ -33,7 +34,7 @@ export const initSocket = async () => {
         clearTimeout(connectionTimeout);
         socket.off('connect', connectHandler);
         socket.off('connect_error', errorHandler);
-        socket.off('disconnect', errorHandler);
+        socket.off('disconnect', disconnectHandler);
       };
 
       const connectHandler = () => {
@@ -48,9 +49,15 @@ export const initSocket = async () => {
         reject(new Error(`Failed to connect: ${err.message}`));
       };
 
+      const disconnectHandler = (reason) => {
+        cleanup();
+        console.log("Disconnected:", reason);
+        reject(new Error(`Disconnected: ${reason}`));
+      };
+
       socket.once('connect', connectHandler);
       socket.once('connect_error', errorHandler);
-      socket.once('disconnect', errorHandler);
+      socket.once('disconnect', disconnectHandler);
       socket.connect();
     });
   } catch (error) {
