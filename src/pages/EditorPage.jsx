@@ -34,8 +34,11 @@ function EditorPage() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Check if we have username from location state
+    console.log('EditorPage useEffect triggered');
+    console.log('Location state:', location.state);
+
     if (!location.state?.username) {
+      console.log('No username in location state, redirecting to home');
       navigate('/');
       return;
     }
@@ -44,10 +47,9 @@ function EditorPage() {
       try {
         socketRef.current = await initSocket();
         
-        // Socket event handlers
         socketRef.current.on('connect', () => {
+          console.log('Socket connected');
           setIsConnected(true);
-          console.log('Socket connected successfully');
           
           socketRef.current.emit(ACTIONS.JOIN, {
             roomId,
@@ -61,13 +63,8 @@ function EditorPage() {
           handleDisconnect();
         });
 
-        socketRef.current.on('connect_failed', (err) => {
-          console.error('Connection failed:', err);
-          toast.error('Connection failed');
-          handleDisconnect();
-        });
-
         socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
+          console.log('JOINED event received:', { clients, username, socketId });
           setClients(clients);
           if (username !== location.state.username) {
             toast.success(`${username} joined the room`);
@@ -107,7 +104,6 @@ function EditorPage() {
     if (socketRef.current) {
       socketRef.current.off('connect');
       socketRef.current.off('connect_error');
-      socketRef.current.off('connect_failed');
       socketRef.current.off(ACTIONS.JOINED);
       socketRef.current.off(ACTIONS.DISCONNECTED);
       socketRef.current.off(ACTIONS.DOUBT);
@@ -228,21 +224,18 @@ function EditorPage() {
     }
   };
 
-  // Render loading state while connecting
+  console.log('Rendering EditorPage, isConnected:', isConnected);
+
   if (!isConnected) {
-    return <div>Connecting to room...</div>;
+    return (
+      <div style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
+        Connecting to room...
+      </div>
+    );
   }
 
   return (
-    <div className="mainWrap" style={{ 
-      gridTemplateColumns: menuOpen 
-        ? editorOpen 
-          ? '230px 1fr 0.4fr' 
-          : '230px 1fr' 
-        : editorOpen 
-          ? '0 1fr 0.4fr' 
-          : '0 1fr' 
-    }}>
+    <div className="mainWrap">
       <div className="aside" style={{ position: 'relative' }}>
         <div 
           className="menu-options" 
@@ -314,22 +307,22 @@ function EditorPage() {
       {clients[0]?.username === location.state?.username && (
         <button 
           className="btn doubtBtn" 
-          style={{ right: '300px' }} 
+          style={{ right: '300px', position: 'absolute', bottom: '20px' }} 
           onClick={lockAccess}
         >
           {access ? 'Lock' : 'Unlock'} Editor
         </button>
       )}
       
-      <button className="btn doubtBtn" style={{ right: '443px' }} onClick={runCode}>
+      <button className="btn doubtBtn" style={{ right: '443px', position: 'absolute', bottom: '20px' }} onClick={runCode}>
         Run Code
       </button>
       
-      <button className="btn doubtBtn" style={{ right: '140px' }} onClick={downloadTxtFile}>
+      <button className="btn doubtBtn" style={{ right: '140px', position: 'absolute', bottom: '20px' }} onClick={downloadTxtFile}>
         Download Code
       </button>
       
-      <button className="btn doubtBtn" onClick={() => setChatShown(true)}>
+      <button className="btn doubtBtn" style={{ right: '20px', position: 'absolute', bottom: '20px' }} onClick={() => setChatShown(true)}>
         Ask a doubt?
       </button>
       
