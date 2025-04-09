@@ -34,7 +34,8 @@ function EditorPage() {
 
   useEffect(() => {
     console.log('EditorPage useEffect triggered');
-    console.log('Location state:', location.state);
+    console.log('Location state:', JSON.stringify(location.state));
+    console.log('Room ID:', roomId);
 
     const init = async () => {
       try {
@@ -44,36 +45,39 @@ function EditorPage() {
           console.log('Socket connected');
           socketRef.current.emit(ACTIONS.JOIN, {
             roomId,
-            username: location.state.username,
+            username: location.state?.username || 'Anonymous',
           });
+          console.log('JOIN emitted with:', { roomId, username: location.state?.username });
         });
 
         socketRef.current.on('connect_error', (err) => {
           console.error('Connection error:', err);
-          toast.error('Socket connection failed, try again!');
+          toast.error('Socket connection failed');
           navigate('/');
         });
 
         socketRef.current.on('connect_failed', (err) => {
           console.error('Connection failed:', err);
-          toast.error('Socket connection failed, try again!');
+          toast.error('Socket connection failed');
           navigate('/');
         });
 
         socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
           console.log('JOINED event received:', { clients, username, socketId });
           setClients(clients);
-          if (username !== location.state.username) {
+          if (username !== location.state?.username) {
             toast.success(`${username} joined the room`);
           }
         });
 
         socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username }) => {
+          console.log('DOUBT event received:', { doubts, username });
           setAllDoubts(doubts);
           toast.success(`${username} asked a doubt!`);
         });
 
         socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+          console.log('DISCONNECTED event received:', { socketId, username });
           toast.success(`${username} left the room`);
           setClients(prev => prev.filter(client => client.socketId !== socketId));
         });
@@ -85,7 +89,12 @@ function EditorPage() {
       }
     };
 
-    init();
+    if (location.state?.username) {
+      init();
+    } else {
+      console.log('No username, redirecting');
+      navigate('/');
+    }
 
     return () => {
       if (socketRef.current) {
@@ -95,10 +104,10 @@ function EditorPage() {
         socketRef.current.off(ACTIONS.DOUBT);
       }
     };
-  }, [roomId, location.state?.username, navigate]);
+  }, [roomId, location.state, navigate]);
 
-  if (!location.state) {
-    console.log('No location state, redirecting to home');
+  if (!location.state?.username) {
+    console.log('No location state.username, rendering Navigate');
     return <Navigate to="/" />;
   }
 
@@ -210,11 +219,13 @@ function EditorPage() {
       setIsWaitingForInput(outputText.includes('Enter your name:'));
       setTerminal(true);
     } catch (error) {
-      console.error('Execution error:', error);
+      console.error('Execution error:', errr);
       setOutput('Error executing code');
       setTerminal(true);
     }
   };
+
+  console.log('Rendering EditorPage, clients:', clients);
 
   return (
     <div 
@@ -224,7 +235,8 @@ function EditorPage() {
         gridTemplateColumns: menuOpen 
           ? (editorOpen ? '230px 1fr 0.4fr' : '230px 1fr') 
           : (editorOpen ? '0 1fr 0.4fr' : '0 1fr'),
-        height: '100vh'
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)' // Ensure visibility over background
       }}
     >
       <div className="aside" style={{ position: 'relative' }}>
@@ -271,7 +283,7 @@ function EditorPage() {
         </button>
       </div>
       
-      <div className="editorWrap">
+      <div className="editorWrap" style={{ backgroundColor: '#fff' }}>
         <Editor 
           socketRef={socketRef} 
           id={roomId} 
@@ -282,7 +294,7 @@ function EditorPage() {
       </div>
       
       {editorOpen && (
-        <div className="terminal">
+        <div className="terminal" style={{ backgroundColor: '#000', color: '#fff' }}>
           <Terminal 
             output={output} 
             terminal={terminal} 
