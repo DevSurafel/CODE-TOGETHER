@@ -6,17 +6,23 @@ import { closeBrackets } from '@codemirror/autocomplete';
 import { foldGutter, foldKeymap } from '@codemirror/language';
 import { EditorView } from '@codemirror/view';
 import { ACTIONS } from '../Action';
-import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
-function Editor({ socketRef, id, setLiveCode, editorRef }) {
-  const location = useLocation();
+function Editor({ socketRef, id, setLiveCode, access, editorRef }) {
+  const internalEditorRef = useRef(null);
+
+  // Properly assign the ref
+  useEffect(() => {
+    if (internalEditorRef.current && editorRef) {
+      editorRef.current = internalEditorRef.current;
+    }
+  }, [editorRef]);
 
   // Handle code changes and emit to socket
   const handleCodeChange = (value, viewUpdate) => {
     setLiveCode(value);
     // Only emit if change originated from user input
-    if (viewUpdate?.origin !== 'setValue' && socketRef.current) {
+    if (viewUpdate?.transactions?.[0]?.annotation?.type !== 'setValue' && socketRef.current) {
       socketRef.current.emit(ACTIONS.CODE_CHANGE, {
         id,
         code: value,
@@ -26,20 +32,19 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
 
   // Sync code and access changes via socket
   useEffect(() => {
-    if (!socketRef.current || !editorRef.current) return;
+    if (!socketRef.current) return;
 
     const syncHandler = ({ code }) => {
-      if (code !== null) {
-        editorRef.current.view.dispatch({
+      if (code !== null && internalEditorRef.current) {
+        const view = internalEditorRef.current.view;
+        view.dispatch({
           changes: {
             from: 0,
-            to: editorRef.current.view.state.doc.length,
+            to: view.state.doc.length,
             insert: code,
           },
-          // Mark this as a programmatic change to avoid feedback loop
           annotations: [{
-            type: 'origin',
-            value: 'setValue'
+            type: 'setValue'
           }]
         });
         setLiveCode(code);
@@ -48,24 +53,29 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
 
     const accessHandler = ({ access }) => {
       toast.success(`Editor is ${access ? 'locked' : 'unlocked'}`);
-      if (editorRef.current) {
-        editorRef.current.setEditable(!access);
+      if (internalEditorRef.current) {
+        internalEditorRef.current.view.dispatch({
+          effects: EditorView.editable.of(!access)
+        });
       }
     };
 
     socketRef.current.on(ACTIONS.SYNC_CODE, syncHandler);
-    socketRef.current.on('access_change', accessHandler);
+    socketRef.current.on('lock_access', accessHandler); // Changed from 'access_change' to match backend
+
+    // Request initial sync when connecting
+    socketRef.current.emit(ACTIONS.SYNC_CODE, { id });
 
     return () => {
       socketRef.current.off(ACTIONS.SYNC_CODE, syncHandler);
-      socketRef.current.off('access_change', accessHandler);
+      socketRef.current.off('lock_access', accessHandler);
     };
   }, [socketRef, id, setLiveCode]);
 
   return (
     <div className="editor-container">
       <CodeMirror
-        ref={editorRef}
+        ref={internalEditorRef}
         value=""
         height="100%"
         theme={material}
@@ -82,11 +92,9 @@ function Editor({ socketRef, id, setLiveCode, editorRef }) {
           bracketMatching: true,
           autocompletion: true,
           closeBrackets: true,
-          closeTags: true,
-          foldKeymap
         }}
         onChange={handleCodeChange}
-        editable={true}
+        editable={!access}
       />
     </div>
   );
