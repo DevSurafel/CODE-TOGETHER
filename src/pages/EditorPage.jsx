@@ -28,91 +28,72 @@ function EditorPage() {
   const [input, setInput] = useState('');
   const [langCode, setLangCode] = useState('52');
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
-  const { id } = useParams(); // This is the roomId
+  const { id } = useParams();
   const socketRef = useRef(null);
 
   useEffect(() => {
     const init = async () => {
-      let attempts = 0;
-      const maxAttempts = 3;
-
-      const tryConnect = async () => {
-        try {
-          socketRef.current = await initSocket();
-          setSocketConnected(true);
-
-          socketRef.current.on('connect_error', (err) => {
-            console.error('Connection error:', err);
-            handleError(err, attempts);
-          });
-
-          socketRef.current.on('connect_failed', (err) => {
-            console.error('Connection failed:', err);
-            handleError(err, attempts);
-          });
-
-          socketRef.current.emit(ACTIONS.JOIN, {
-            roomId: id, // Changed from 'id' to 'roomId' to match backend
-            username: location.state?.username || 'Anonymous',
-          }, (response) => {
-            if (response?.error) {
-              throw new Error(response.error);
-            }
-          });
-
-          socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username, socketId }) => {
-            setAllDoubts(doubts);
-            toast.success(`${username} asked a doubt!`);
-          });
-
-          socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
-            setClients(clients);
-            if (username !== location.state?.username) {
-              toast.success(`${username} joined the room.`);
-            }
-          });
-
-          socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
-            toast.success(`${username} left the room.`);
-            setClients((prev) => prev.filter((item) => item.socketId !== socketId));
-          });
-        } catch (err) {
-          attempts++;
-          if (attempts < maxAttempts) {
-            console.log(`Retrying connection (${attempts}/${maxAttempts})...`);
-            setTimeout(tryConnect, 5000);
-          } else {
-            handleError(err, attempts);
-          }
-        }
-      };
-
-      const handleError = (err, attemptCount) => {
-        console.error('Socket error:', err);
-        if (attemptCount >= maxAttempts) {
-          toast.error('Connection failed after retries, try again later!');
+      try {
+        socketRef.current = await initSocket();
+        
+        socketRef.current.on('connect_error', (err) => {
+          console.error('Connection error:', err);
+          toast.error('Socket connection failed, try again!');
           navigate('/');
-        }
-      };
+        });
 
-      tryConnect();
-      
-      // Added this line to set editor readOnly property after initialization
-      if (editorRef.current) {
-        editorRef.current.setOption('readOnly', false);
+        socketRef.current.on('connect_failed', (err) => {
+          console.error('Connection failed:', err);
+          toast.error('Socket connection failed, try again!');
+          navigate('/');
+        });
+
+        // Join the room using the correct parameter structure
+        socketRef.current.emit(ACTIONS.JOIN, {
+          roomId: id,
+          username: location.state?.username || 'Anonymous',
+        });
+
+        // Listening for doubt event
+        socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username, socketId }) => {
+          setAllDoubts(doubts);
+          toast.success(`${username} asked a doubt!`);
+        });
+
+        // Listening for joined event
+        socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
+          setClients(clients);
+          if (username !== location.state?.username) {
+            toast.success(`${username} joined the room.`);
+          }
+        });
+
+        // Disconnecting the user listener
+        socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+          toast.success(`${username} left the room.`);
+          setClients((prev) => prev.filter((item) => item.socketId !== socketId));
+        });
+        
+        if (editorRef.current) {
+          editorRef.current.setOption('readOnly', false);
+        }
+      } catch (err) {
+        console.error('Socket initialization error:', err);
+        toast.error('Failed to connect to server');
+        navigate('/');
       }
-
-      return () => {
-        if (socketRef.current) {
-          socketRef.current.off(ACTIONS.JOINED);
-          socketRef.current.off(ACTIONS.DISCONNECTED);
-          socketRef.current.disconnect();
-        }
-      };
     };
 
     init();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off(ACTIONS.JOINED);
+        socketRef.current.off(ACTIONS.DISCONNECTED);
+        socketRef.current.off(ACTIONS.DOUBT);
+        socketRef.current.disconnect();
+      }
+    };
   }, [id, navigate, location.state]);
 
   const copyRoomId = async () => {
@@ -131,7 +112,7 @@ function EditorPage() {
       return;
     }
     socketRef.current?.emit(ACTIONS.DOUBT, {
-      roomId: id, // Changed from 'id' to 'roomId'
+      roomId: id,
       username: location.state?.username,
       doubt,
     });
@@ -142,7 +123,7 @@ function EditorPage() {
     const newAccess = !access;
     setAccess(newAccess);
     socketRef.current?.emit('lock_access', {
-      roomId: id, // Changed from 'id' to 'roomId'
+      roomId: id,
       access: newAccess,
     });
   };
@@ -294,8 +275,7 @@ function EditorPage() {
           id={id} 
           setLiveCode={setLiveCode} 
           access={access} 
-          editorRef={editorRef} 
-          connected={socketConnected}
+          editorRef={editorRef}
         />
       </div>
       
@@ -313,7 +293,7 @@ function EditorPage() {
         )}
       </div>
       
-      {clients[0]?.username === location.state.username && (
+      {clients[0]?.username === location.state?.username && (
         <button 
           className="btn doubtBtn" 
           style={{ right: '300px' }} 
