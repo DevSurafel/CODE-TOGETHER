@@ -219,7 +219,7 @@ function EditorPage() {
       setIsWaitingForInput(outputText.includes('Enter your name:'));
       setTerminal(true);
     } catch (error) {
-      console.error('Execution error:', errr);
+      console.error('Execution error:', error); // Fixed 'errr' to 'error'
       setOutput('Error executing code');
       setTerminal(true);
     }
@@ -236,7 +236,7 @@ function EditorPage() {
           ? (editorOpen ? '230px 1fr 0.4fr' : '230px 1fr') 
           : (editorOpen ? '0 1fr 0.4fr' : '0 1fr'),
         height: '100vh',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)' // Ensure visibility over background
+        backgroundColor: 'rgba(0, 0, 0, 0.8)'
       }}
     >
       <div className="aside" style={{ position: 'relative' }}>
