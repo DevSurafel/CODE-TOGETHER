@@ -3,7 +3,7 @@ import ACTIONS from '../Action';
 import Client from '../components/Client';
 import Editor from '../components/Editor';
 import { initSocket } from '../Socket';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import DoubtSection from '../components/DoubtSection';
 import bglogo from '../images/bglogo.png';
@@ -31,17 +31,10 @@ function EditorPage() {
   const [input, setInput] = useState('');
   const [langCode, setLangCode] = useState('52');
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     console.log('EditorPage useEffect triggered');
     console.log('Location state:', location.state);
-
-    if (!location.state?.username) {
-      console.log('No username in location state, redirecting to home');
-      navigate('/');
-      return;
-    }
 
     const init = async () => {
       try {
@@ -49,8 +42,6 @@ function EditorPage() {
         
         socketRef.current.on('connect', () => {
           console.log('Socket connected');
-          setIsConnected(true);
-          
           socketRef.current.emit(ACTIONS.JOIN, {
             roomId,
             username: location.state.username,
@@ -59,8 +50,14 @@ function EditorPage() {
 
         socketRef.current.on('connect_error', (err) => {
           console.error('Connection error:', err);
-          toast.error('Failed to connect to server');
-          handleDisconnect();
+          toast.error('Socket connection failed, try again!');
+          navigate('/');
+        });
+
+        socketRef.current.on('connect_failed', (err) => {
+          console.error('Connection failed:', err);
+          toast.error('Socket connection failed, try again!');
+          navigate('/');
         });
 
         socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
@@ -82,35 +79,28 @@ function EditorPage() {
         });
 
       } catch (err) {
-        console.error('Initialization error:', err);
+        console.error('Socket initialization error:', err);
         toast.error('Failed to initialize editor');
-        handleDisconnect();
+        navigate('/');
       }
     };
 
     init();
 
     return () => {
-      cleanupSocket();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current.off(ACTIONS.JOINED);
+        socketRef.current.off(ACTIONS.DISCONNECTED);
+        socketRef.current.off(ACTIONS.DOUBT);
+      }
     };
   }, [roomId, location.state?.username, navigate]);
 
-  const handleDisconnect = () => {
-    cleanupSocket();
-    navigate('/');
-  };
-
-  const cleanupSocket = () => {
-    if (socketRef.current) {
-      socketRef.current.off('connect');
-      socketRef.current.off('connect_error');
-      socketRef.current.off(ACTIONS.JOINED);
-      socketRef.current.off(ACTIONS.DISCONNECTED);
-      socketRef.current.off(ACTIONS.DOUBT);
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-  };
+  if (!location.state) {
+    console.log('No location state, redirecting to home');
+    return <Navigate to="/" />;
+  }
 
   const copyRoomId = async () => {
     try {
@@ -145,7 +135,9 @@ function EditorPage() {
   };
 
   const leaveRoom = () => {
-    cleanupSocket();
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
     navigate('/');
     toast.success('You left the room');
   };
@@ -224,18 +216,17 @@ function EditorPage() {
     }
   };
 
-  console.log('Rendering EditorPage, isConnected:', isConnected);
-
-  if (!isConnected) {
-    return (
-      <div style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
-        Connecting to room...
-      </div>
-    );
-  }
-
   return (
-    <div className="mainWrap">
+    <div 
+      className="mainWrap" 
+      style={{ 
+        display: 'grid',
+        gridTemplateColumns: menuOpen 
+          ? (editorOpen ? '230px 1fr 0.4fr' : '230px 1fr') 
+          : (editorOpen ? '0 1fr 0.4fr' : '0 1fr'),
+        height: '100vh'
+      }}
+    >
       <div className="aside" style={{ position: 'relative' }}>
         <div 
           className="menu-options" 
@@ -314,15 +305,27 @@ function EditorPage() {
         </button>
       )}
       
-      <button className="btn doubtBtn" style={{ right: '443px', position: 'absolute', bottom: '20px' }} onClick={runCode}>
+      <button 
+        className="btn doubtBtn" 
+        style={{ right: '443px', position: 'absolute', bottom: '20px' }} 
+        onClick={runCode}
+      >
         Run Code
       </button>
       
-      <button className="btn doubtBtn" style={{ right: '140px', position: 'absolute', bottom: '20px' }} onClick={downloadTxtFile}>
+      <button 
+        className="btn doubtBtn" 
+        style={{ right: '140px', position: 'absolute', bottom: '20px' }} 
+        onClick={downloadTxtFile}
+      >
         Download Code
       </button>
       
-      <button className="btn doubtBtn" style={{ right: '20px', position: 'absolute', bottom: '20px' }} onClick={() => setChatShown(true)}>
+      <button 
+        className="btn doubtBtn" 
+        style={{ right: '20px', position: 'absolute', bottom: '20px' }} 
+        onClick={() => setChatShown(true)}
+      >
         Ask a doubt?
       </button>
       
