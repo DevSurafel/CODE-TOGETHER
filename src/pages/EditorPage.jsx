@@ -33,16 +33,22 @@ function EditorPage() {
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
 
   useEffect(() => {
+    console.log('EditorPage useEffect triggered');
+    console.log('Location state:', JSON.stringify(location.state));
+    console.log('Room ID:', roomId);
+
     const init = async () => {
       try {
         socketRef.current = await initSocket();
         
         socketRef.current.on('connect', () => {
+          console.log('Socket connected');
           const username = location.state?.username || 'Anonymous';
           socketRef.current.emit(ACTIONS.JOIN, {
             roomId,
             username,
           });
+          console.log('JOIN emitted with:', { roomId, username });
         });
 
         socketRef.current.on('connect_error', (err) => {
@@ -58,6 +64,7 @@ function EditorPage() {
         });
 
         socketRef.current.on(ACTIONS.JOINED, ({ clients, username, socketId }) => {
+          console.log('JOINED event received:', { clients, username, socketId });
           setClients(clients);
           if (username !== location.state?.username) {
             toast.success(`${username} joined the room`);
@@ -65,11 +72,13 @@ function EditorPage() {
         });
 
         socketRef.current.on(ACTIONS.DOUBT, ({ doubts, username }) => {
+          console.log('DOUBT event received:', { doubts, username });
           setAllDoubts(doubts);
           toast.success(`${username} asked a doubt!`);
         });
 
         socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+          console.log('DISCONNECTED event received:', { socketId, username });
           toast.success(`${username} left the room`);
           setClients(prev => prev.filter(client => client.socketId !== socketId));
         });
@@ -84,6 +93,7 @@ function EditorPage() {
     if (location.state?.username) {
       init();
     } else {
+      console.log('No username, redirecting');
       navigate('/');
     }
 
@@ -97,7 +107,26 @@ function EditorPage() {
     };
   }, [roomId, location.state, navigate]);
 
+  // Debug useEffect to check layout
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const editorWrap = document.querySelector('.editorWrap');
+      const editorContainer = document.querySelector('.editor-container');
+      
+      if (editorWrap && editorContainer) {
+        console.log('EditorWrap dimensions:', editorWrap.offsetWidth, editorWrap.offsetHeight);
+        console.log('EditorContainer dimensions:', editorContainer.offsetWidth, editorContainer.offsetHeight);
+        clearInterval(interval);
+      } else {
+        console.log('Editor elements not found yet...');
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   if (!location.state?.username) {
+    console.log('No location state.username, rendering Navigate');
     return <Navigate to="/" />;
   }
 
@@ -216,7 +245,19 @@ function EditorPage() {
   };
 
   return (
-    <div className="mainWrap" style={{ gridTemplateColumns: menuOpen ? `${editorOpen ? '230px 1fr 0.4fr' : '230px 1fr'}` : `${editorOpen ? '0 1fr 0.4fr' : '0 1fr'}` }}>
+    <div 
+      className="mainWrap" 
+      style={{ 
+        display: 'grid',
+        gridTemplateColumns: menuOpen 
+          ? (editorOpen ? '230px minmax(300px, 1fr) 0.4fr' : '230px minmax(300px, 1fr)') 
+          : (editorOpen ? '0 minmax(300px, 1fr) 0.4fr' : '0 minmax(300px, 1fr)'),
+        height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)'
+      }}
+    >
       <div className="aside" style={{ position: 'relative', backgroundColor: '#1a1a1a', color: 'white' }}>
         <div 
           className="menu-options" 
@@ -270,7 +311,18 @@ function EditorPage() {
         </button>
       </div>
       
-      <div className="editorWrap">
+      <div 
+        className="editorWrap" 
+        style={{ 
+          backgroundColor: '#fff', 
+          height: '100vh', 
+          width: '100%', 
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         <Editor 
           socketRef={socketRef} 
           id={roomId} 
@@ -280,8 +332,16 @@ function EditorPage() {
         />
       </div>
       
-      <div className="terminal">
-        {editorOpen && (
+      {editorOpen && (
+        <div 
+          className="terminal" 
+          style={{ 
+            backgroundColor: '#000', 
+            color: '#fff', 
+            height: '100%', 
+            overflow: 'auto' 
+          }}
+        >
           <Terminal 
             output={output} 
             terminal={terminal} 
@@ -291,8 +351,8 @@ function EditorPage() {
             runCode={runCode} 
             isWaitingForInput={isWaitingForInput} 
           />
-        )}
-      </div>
+        </div>
+      )}
       
       {clients[0]?.username === location.state?.username && (
         <button 
