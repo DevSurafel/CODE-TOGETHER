@@ -5,7 +5,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { closeBrackets } from '@codemirror/autocomplete';
 import { foldGutter, foldKeymap } from '@codemirror/language';
 import { EditorView } from '@codemirror/view';
-import { ACTIONS } from '../Action';
+import ACTIONS from '../Action';
 import { toast } from 'react-hot-toast';
 
 function Editor({ socketRef, id, setLiveCode, access, editorRef }) {
