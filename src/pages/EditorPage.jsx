@@ -107,6 +107,24 @@ function EditorPage() {
     };
   }, [roomId, location.state, navigate]);
 
+  // Debug useEffect to check layout
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const editorWrap = document.querySelector('.editorWrap');
+      const editorContainer = document.querySelector('.editor-container');
+      
+      if (editorWrap && editorContainer) {
+        console.log('EditorWrap dimensions:', editorWrap.offsetWidth, editorWrap.offsetHeight);
+        console.log('EditorContainer dimensions:', editorContainer.offsetWidth, editorContainer.offsetHeight);
+        clearInterval(interval);
+      } else {
+        console.log('Editor elements not found yet...');
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   if (!location.state?.username) {
     console.log('No location state.username, rendering Navigate');
     return <Navigate to="/" />;
@@ -226,24 +244,33 @@ function EditorPage() {
     }
   };
 
-  console.log('Rendering EditorPage, clients:', clients);
-
   return (
     <div 
       className="mainWrap" 
       style={{ 
         display: 'grid',
         gridTemplateColumns: menuOpen 
-          ? (editorOpen ? '230px 1fr 0.4fr' : '230px 1fr') 
-          : (editorOpen ? '0 1fr 0.4fr' : '0 1fr'),
+          ? (editorOpen ? '230px minmax(300px, 1fr) 0.4fr' : '230px minmax(300px, 1fr)') 
+          : (editorOpen ? '0 minmax(300px, 1fr) 0.4fr' : '0 minmax(300px, 1fr)'),
         height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
         backgroundColor: 'rgba(0, 0, 0, 0.8)'
       }}
     >
       <div className="aside" style={{ position: 'relative', backgroundColor: '#1a1a1a', color: 'white' }}>
         <div 
           className="menu-options" 
-          style={{ left: menuOpen ? '230px' : '0px' }} 
+          style={{ 
+            position: 'absolute',
+            left: menuOpen ? '230px' : '0px',
+            top: '10px',
+            zIndex: 10,
+            cursor: 'pointer',
+            backgroundColor: '#2e2e2e',
+            padding: '8px',
+            borderRadius: '4px'
+          }} 
           onClick={() => setMenuOpen(!menuOpen)}
         >
           <AiOutlineMenu />
@@ -288,9 +315,12 @@ function EditorPage() {
         className="editorWrap" 
         style={{ 
           backgroundColor: '#fff', 
-          height: '100%', 
+          height: '100vh', 
           width: '100%', 
-          overflow: 'auto' 
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         <Editor 
@@ -327,7 +357,7 @@ function EditorPage() {
       {clients[0]?.username === location.state?.username && (
         <button 
           className="btn doubtBtn" 
-          style={{ right: '300px', position: 'absolute', bottom: '20px' }} 
+          style={{ right: '300px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
           onClick={lockAccess}
         >
           {access ? 'Lock' : 'Unlock'} Editor
@@ -336,7 +366,7 @@ function EditorPage() {
       
       <button 
         className="btn doubtBtn" 
-        style={{ right: '443px', position: 'absolute', bottom: '20px' }} 
+        style={{ right: '443px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
         onClick={runCode}
       >
         Run Code
@@ -344,7 +374,7 @@ function EditorPage() {
       
       <button 
         className="btn doubtBtn" 
-        style={{ right: '140px', position: 'absolute', bottom: '20px' }} 
+        style={{ right: '140px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
         onClick={downloadTxtFile}
       >
         Download Code
@@ -352,7 +382,7 @@ function EditorPage() {
       
       <button 
         className="btn doubtBtn" 
-        style={{ right: '20px', position: 'absolute', bottom: '20px' }} 
+        style={{ right: '20px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
         onClick={() => setChatShown(true)}
       >
         Ask a doubt?
