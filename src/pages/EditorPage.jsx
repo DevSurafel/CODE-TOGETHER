@@ -311,92 +311,27 @@ function EditorPage() {
         </button>
       </div>
       
-      <div 
-        className="editorWrap" 
-        style={{ 
-          backgroundColor: '#fff', 
-          height: '100vh', 
-          width: '100%', 
-          overflow: 'hidden',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-        <Editor 
-          socketRef={socketRef} 
-          id={roomId} 
-          setLiveCode={setLiveCode} 
-          access={access} 
-          editorRef={editorRef}
-        />
+     <div className="editorWrap">
+        <Editor socketRef={socketRef} id={id} setLiveCode={setLiveCode} access={access} editorRef={editorRef} />
       </div>
-      
-      {editorOpen && (
-        <div 
-          className="terminal" 
-          style={{ 
-            backgroundColor: '#000', 
-            color: '#fff', 
-            height: '100%', 
-            overflow: 'auto' 
-          }}
-        >
-          <Terminal 
-            output={output} 
-            terminal={terminal} 
-            setEditorOpen={setEditorOpen} 
-            setInput={setInput} 
-            input={input} 
-            runCode={runCode} 
-            isWaitingForInput={isWaitingForInput} 
-          />
-        </div>
-      )}
-      
-      {clients[0]?.username === location.state?.username && (
-        <button 
-          className="btn doubtBtn" 
-          style={{ right: '300px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
-          onClick={lockAccess}
-        >
+      <div className="terminal">
+        {editorOpen && <Terminal output={output} terminal={terminal} setEditorOpen={setEditorOpen} setInput={setInput} input={input} runCode={runCode} isWaitingForInput={isWaitingForInput} />}
+      </div>
+      {clients.length !== 0 && clients[0].username === location.state.username && (
+        <button className="btn doubtBtn" style={{ right: '300px' }} onClick={lockAccess}>
           {access ? 'Lock' : 'Unlock'} Editor
         </button>
       )}
-      
-      <button 
-        className="btn doubtBtn" 
-        style={{ right: '443px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
-        onClick={runCode}
-      >
+      <button className="btn doubtBtn" style={{ right: '443px' }} onClick={runCode}>
         Run Code
       </button>
-      
-      <button 
-        className="btn doubtBtn" 
-        style={{ right: '140px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
-        onClick={downloadTxtFile}
-      >
+      <button className="btn doubtBtn" style={{ right: '140px' }} onClick={downloadTxtFile}>
         Download Code
       </button>
-      
-      <button 
-        className="btn doubtBtn" 
-        style={{ right: '20px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
-        onClick={() => setChatShown(true)}
-      >
+      <button className="btn doubtBtn" onClick={handleChat}>
         Ask a doubt?
       </button>
-      
-      {isChatShown && (
-        <DoubtSection 
-          status={setChatShown} 
-          setDoubt={setDoubt} 
-          doubt={doubt} 
-          askDoubt={askDoubt} 
-          allDoubts={allDoubts} 
-        />
-      )}
+      {isChatShown && <DoubtSection status={setChatShown} setDoubt={setDoubt} doubt={doubt} askDoubt={askDoubt} allDoubts={allDoubts} />}
     </div>
   );
 }
