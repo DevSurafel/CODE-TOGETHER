@@ -245,7 +245,7 @@ function EditorPage() {
   };
 
   return (
-     <div className="mainWrap" style={{ gridTemplateColumns: menuOpen ? `${editorOpen ? '230px 1fr 0.4fr' : '230px 1fr'}` : `${editorOpen ? '0 1fr 0.4fr' : '0 1fr'}` }}>
+      <div className="mainWrap" style={{ gridTemplateColumns: menuOpen ? `${editorOpen ? '230px 1fr 0.4fr' : '230px 1fr'}` : `${editorOpen ? '0 1fr 0.4fr' : '0 1fr'}` }}>
       <div className="aside" style={{ position: 'relative' }}>
         <div className="menu-options" style={{ left: menuOpen ? '230px' : '0px' }} onClick={() => setMenuOpen(!menuOpen)}>
           <AiOutlineMenu />
@@ -265,7 +265,7 @@ function EditorPage() {
             {clients.map((item, index) => index !== 0 && <Client key={item.socketId} username={item.username} />)}
           </div>
         </div>
-    <select 
+        <select 
           className="btn copyBtn" 
           value={langCode} 
           onChange={(e) => setLangCode(e.target.value)}
@@ -284,19 +284,37 @@ function EditorPage() {
         </button>
       </div>
       
-      <div className="editorWrap">
+      <div 
+        className="editorWrap" 
+        style={{ 
+          backgroundColor: '#fff', 
+          height: '100vh', 
+          width: '100%', 
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         <Editor 
           socketRef={socketRef} 
-          id={id} 
+          id={roomId} 
           setLiveCode={setLiveCode} 
           access={access} 
-          editorRef={editorRef} 
-          connected={socketConnected}
+          editorRef={editorRef}
         />
       </div>
       
-      <div className="terminal">
-        {editorOpen && (
+      {editorOpen && (
+        <div 
+          className="terminal" 
+          style={{ 
+            backgroundColor: '#000', 
+            color: '#fff', 
+            height: '100%', 
+            overflow: 'auto' 
+          }}
+        >
           <Terminal 
             output={output} 
             terminal={terminal} 
@@ -306,31 +324,40 @@ function EditorPage() {
             runCode={runCode} 
             isWaitingForInput={isWaitingForInput} 
           />
-        )}
-      </div>
+        </div>
+      )}
       
-      {clients[0]?.username === location.state.username && (
+      {clients[0]?.username === location.state?.username && (
         <button 
           className="btn doubtBtn" 
-          style={{ right: '300px' }} 
+          style={{ right: '300px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
           onClick={lockAccess}
         >
           {access ? 'Lock' : 'Unlock'} Editor
         </button>
       )}
       
-      <button className="btn doubtBtn" style={{ right: '443px' }} onClick={runCode}>
+      <button 
+        className="btn doubtBtn" 
+        style={{ right: '443px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
+        onClick={runCode}
+      >
         Run Code
       </button>
       
-      <button className="btn doubtBtn" style={{ right: '140px' }} onClick={downloadTxtFile}>
+      <button 
+        className="btn doubtBtn" 
+        style={{ right: '140px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
+        onClick={downloadTxtFile}
+      >
         Download Code
       </button>
       
-      <button className="btn doubtBtn" onClick={(e) => {
-        e.preventDefault();
-        setChatShown(true);
-      }}>
+      <button 
+        className="btn doubtBtn" 
+        style={{ right: '20px', position: 'absolute', bottom: '20px', zIndex: 100 }} 
+        onClick={() => setChatShown(true)}
+      >
         Ask a doubt?
       </button>
       
@@ -346,4 +373,5 @@ function EditorPage() {
     </div>
   );
 }
+
 export default EditorPage;
