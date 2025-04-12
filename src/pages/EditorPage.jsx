@@ -288,7 +288,7 @@ function EditorPage() {
         className="editorWrap" 
         style={{ 
           backgroundColor: '#fff', 
-          height: '500vh', 
+          height: '500px', 
           width: '100%', 
           overflow: 'hidden',
           position: 'relative',
