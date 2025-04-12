@@ -285,17 +285,17 @@ function EditorPage() {
       </div>
       
       <div 
-        className="editorWrap" 
-        style={{ 
-          backgroundColor: '#fff', 
-          height: '100%', 
-          width: '100%', 
-          overflow: 'hidden',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
+  className="editorWrap" 
+  style={{ 
+    backgroundColor: '#fff', 
+    height: '100vh',
+    flex: 1,
+    overflow: 'hidden',
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column'
+  }}
+>
         <Editor 
           socketRef={socketRef} 
           id={roomId} 
