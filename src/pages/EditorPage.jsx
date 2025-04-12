@@ -245,51 +245,24 @@ function EditorPage() {
   };
 
   return (
-    <div 
-      className="mainWrap" 
-      style={{ 
-        display: 'grid',
-        gridTemplateColumns: menuOpen 
-          ? (editorOpen ? '230px minmax(300px, 1fr) 0.4fr' : '230px minmax(300px, 1fr)') 
-          : (editorOpen ? '0 minmax(300px, 1fr) 0.4fr' : '0 minmax(300px, 1fr)'),
-        height: '100vh',
-        width: '100vw',
-        overflow: 'hidden',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)'
-      }}
-    >
-      <div className="aside" style={{ position: 'relative', backgroundColor: '#1a1a1a', color: 'white' }}>
-        <div 
-          className="menu-options" 
-          style={{ 
-            position: 'absolute',
-            left: menuOpen ? '230px' : '0px',
-            top: '10px',
-            zIndex: 10,
-            cursor: 'pointer',
-            backgroundColor: '#2e2e2e',
-            padding: '8px',
-            borderRadius: '4px'
-          }} 
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
+     <div className="mainWrap" style={{ gridTemplateColumns: menuOpen ? `${editorOpen ? '230px 1fr 0.4fr' : '230px 1fr'}` : `${editorOpen ? '0 1fr 0.4fr' : '0 1fr'}` }}>
+      <div className="aside" style={{ position: 'relative' }}>
+        <div className="menu-options" style={{ left: menuOpen ? '230px' : '0px' }} onClick={() => setMenuOpen(!menuOpen)}>
           <AiOutlineMenu />
         </div>
         <div className="asideInner">
           <div className="logo">
             <h2 className="logo_design">
-              <img src={bglogo} alt="Code Together Logo" style={{ width: '220px' }} />
+              <img src={bglogo} alt="" style={{ width: '220px' }} />
             </h2>
           </div>
           <h3>Developer</h3>
           <div className="clientsList">
-            {clients[0] && <Client key={clients[0].socketId} username={clients[0].username} />}
+            {clients.length !== 0 && <Client key={clients[0].socketId} username={clients[0].username} />}
           </div>
           <h3>Contributors</h3>
           <div className="clientsList">
-            {clients.slice(1).map((client) => (
-              <Client key={client.socketId} username={client.username} />
-            ))}
+            {clients.map((item, index) => index !== 0 && <Client key={item.socketId} username={item.username} />)}
           </div>
         </div>
         <select 
