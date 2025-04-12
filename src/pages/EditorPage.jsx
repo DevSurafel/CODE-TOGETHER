@@ -7,7 +7,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast';
 import DoubtSection from '../components/DoubtSection';
 import bglogo from '../images/bglogo.png';
-import { AiOutlineMenu } from 'react-icons/ai';
+import { AiOutlineMenu } from 'react-icons/ai';a
 import axios from 'axios';
 import Terminal from '../components/Terminal';
 
@@ -288,7 +288,7 @@ function EditorPage() {
         className="editorWrap" 
         style={{ 
           backgroundColor: '#fff', 
-          height: '100vh', 
+          height: '500vh', 
           width: '100%', 
           overflow: 'hidden',
           position: 'relative',
