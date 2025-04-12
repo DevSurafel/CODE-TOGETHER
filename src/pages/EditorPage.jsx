@@ -265,10 +265,15 @@ function EditorPage() {
             {clients.map((item, index) => index !== 0 && <Client key={item.socketId} username={item.username} />)}
           </div>
         </div>
-       <select name="" className="btn copyBtn" value={langCode} onChange={(e) => setLangCode(e.target.value)} style={{ marginBottom: '10px', outline: 'none' }}>
+    <select 
+          className="btn copyBtn" 
+          value={langCode} 
+          onChange={(e) => setLangCode(e.target.value)}
+          style={{ marginBottom: '10px', outline: 'none' }}
+        >
           <option value="52">C++</option>
           <option value="49">C</option>
-          <option value="63">Javascript</option>
+          <option value="63">JavaScript</option>
           <option value="92">Python</option>
         </select>
         <button className="btn copyBtn" onClick={copyRoomId}>
@@ -278,27 +283,66 @@ function EditorPage() {
           Leave
         </button>
       </div>
+      
       <div className="editorWrap">
-        <Editor socketRef={socketRef} id={id} setLiveCode={setLiveCode} access={access} editorRef={editorRef} />
+        <Editor 
+          socketRef={socketRef} 
+          id={id} 
+          setLiveCode={setLiveCode} 
+          access={access} 
+          editorRef={editorRef} 
+          connected={socketConnected}
+        />
       </div>
+      
       <div className="terminal">
-        {editorOpen && <Terminal output={output} terminal={terminal} setEditorOpen={setEditorOpen} setInput={setInput} input={input} runCode={runCode} isWaitingForInput={isWaitingForInput} />}
+        {editorOpen && (
+          <Terminal 
+            output={output} 
+            terminal={terminal} 
+            setEditorOpen={setEditorOpen} 
+            setInput={setInput} 
+            input={input} 
+            runCode={runCode} 
+            isWaitingForInput={isWaitingForInput} 
+          />
+        )}
       </div>
-      {clients.length !== 0 && clients[0].username === location.state.username && (
-        <button className="btn doubtBtn" style={{ right: '300px' }} onClick={lockAccess}>
+      
+      {clients[0]?.username === location.state.username && (
+        <button 
+          className="btn doubtBtn" 
+          style={{ right: '300px' }} 
+          onClick={lockAccess}
+        >
           {access ? 'Lock' : 'Unlock'} Editor
         </button>
       )}
+      
       <button className="btn doubtBtn" style={{ right: '443px' }} onClick={runCode}>
         Run Code
       </button>
+      
       <button className="btn doubtBtn" style={{ right: '140px' }} onClick={downloadTxtFile}>
         Download Code
       </button>
-      <button className="btn doubtBtn" onClick={handleChat}>
+      
+      <button className="btn doubtBtn" onClick={(e) => {
+        e.preventDefault();
+        setChatShown(true);
+      }}>
         Ask a doubt?
       </button>
-      {isChatShown && <DoubtSection status={setChatShown} setDoubt={setDoubt} doubt={doubt} askDoubt={askDoubt} allDoubts={allDoubts} />}
+      
+      {isChatShown && (
+        <DoubtSection 
+          status={setChatShown} 
+          setDoubt={setDoubt} 
+          doubt={doubt} 
+          askDoubt={askDoubt} 
+          allDoubts={allDoubts} 
+        />
+      )}
     </div>
   );
 }
