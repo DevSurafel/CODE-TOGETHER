@@ -311,7 +311,7 @@ function EditorPage() {
           style={{ 
             backgroundColor: '#000', 
             color: '#fff', 
-            height: '100%', 
+            height: '10%', 
             overflow: 'auto' 
           }}
         >
